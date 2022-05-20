@@ -17,3 +17,8 @@ impl TokenResponse {
        TokenResponse {success, token}
     }
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PrivateBoardData {
+   pub name: String,
+}

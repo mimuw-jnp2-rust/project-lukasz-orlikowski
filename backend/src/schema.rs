@@ -5,3 +5,12 @@ table! {
         password -> Varchar,
     }
 }
+
+table! {
+    private_board (id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        owner -> Integer,
+    }
+}
+

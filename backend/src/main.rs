@@ -2,6 +2,10 @@ use rocket::http::{Status};
 use types::{Credentials, TokenResponse };
 use db::Connection;
 use rocket::serde::json::Json;
+use crate::auth::ApiKey;
+use crate::types::PrivateBoardData;
+use board::PrivateBoard;
+
 use self::auth::crypto::sha2::Sha256;
 use self::auth::jwt::{
     Header,
@@ -15,6 +19,7 @@ pub mod auth;
 pub mod db;
 pub mod user;
 pub mod schema;
+pub mod board;
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
@@ -22,6 +27,11 @@ pub mod schema;
 
 use rocket::{Rocket, Build, Response, Request};
 use rocket::fairing::AdHoc;
+use std::error::Error;
+use std::str::FromStr;
+
+use rocket::http::Method;
+use rocket_cors::{AllowedHeaders, AllowedOrigins, AllowedMethods, CorsOptions};
 
 #[post("/login", data = "<credentials>")]
 async fn login(credentials: Json<Credentials>, connection: Connection) ->  Result<Json<TokenResponse>, Status> {
@@ -56,6 +66,24 @@ async fn register(data: Json<User>, connection: Connection) -> Result<Json<bool>
     }
 }
 
+#[post("/private_board/create", data="<data>")]
+async fn private_board(data: Json<PrivateBoardData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match User::get_username_id(key.0, &connection).await {
+        Some(user_id) => {
+            let board = PrivateBoard{id: None, owner: user_id, name: data.name.clone()};
+            match PrivateBoard::create(board, &connection).await {
+                Ok(cnt) => Ok(Json(cnt > 0)),
+                _ => Err(Status::NotFound)
+            }
+        },
+        _ => Err(Status::NotFound) 
+    }
+}
+//#[get("/sensitive")]
+//fn sensitive(key: ApiKey) -> String {
+//    format!("Hello, you have been identified as {}", key.0)
+//}
+
 async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
     embed_migrations!();
 
@@ -64,18 +92,6 @@ async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
 
     rocket
 }
-
-#[catch(404)]
-fn not_found(req: &Request) { 
-    println!("{:?}", req);
- }
-
-
- use std::error::Error;
-use std::str::FromStr;
-
-use rocket::http::Method;
-use rocket_cors::{AllowedHeaders, AllowedOrigins, AllowedMethods, CorsOptions};
 
 
 #[rocket::main]
@@ -95,7 +111,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register])
+        .mount("/", routes![login, register, private_board])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

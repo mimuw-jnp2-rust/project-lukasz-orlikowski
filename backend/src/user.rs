@@ -3,6 +3,7 @@ use diesel::Insertable;
 use diesel::Queryable;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
+use diesel::result::Error;
 use crate::schema::users;
 use rocket::serde::{Deserialize, Serialize};
 use crate::db::Connection;
@@ -19,7 +20,7 @@ impl User {
     pub async fn create(user: User, connection: &Connection) -> QueryResult<usize> {
        connection.run(|conn| {
         diesel::insert_into(users::table)
-            .values(user)
+            .values((users::username.eq(user.username), users::password.eq(user.password)))
             .execute(conn)
        }).await
     }
@@ -54,5 +55,20 @@ impl User {
 
     pub fn delete(id: i32, connection: &SqliteConnection) -> bool {
         diesel::delete(users::table.find(id)).execute(connection).is_ok()
+    }
+
+    pub async fn get_username_id(username: String, connection: &Connection) -> Option<i32> {
+        connection.run(|conn| { 
+            let res: Result<User, Error> = users::table
+            .filter(users::username.eq(username))
+            .order(users::id)
+            .first(conn);
+            match res {
+                Ok(user) =>{Some(user.id.unwrap()) }, // Id is not none here due to primary key constraint
+                Err(_) => {
+                    None
+                }
+            }
+        }).await
     }
 }

@@ -30,10 +30,11 @@ impl<'a> FromRequest<'a> for ApiKey {
     type Error = ();
 
     async fn from_request(request: &'a Request<'_>) -> request::Outcome<ApiKey, ()> {
-        let keys: Vec<_> = request.headers().get("Authentication").collect();
+        let keys: Vec<_> = request.headers().get("Authorization").collect();
         if keys.len() != 1 {
             return Outcome::Forward(());
         }
+        println!("{}", keys[0]);
         match read_token(keys[0]) {
             Ok(claim) => Outcome::Success(ApiKey(claim)),
             Err(_) => Outcome::Forward(())
