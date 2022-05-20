@@ -22,3 +22,9 @@ impl TokenResponse {
 pub struct PrivateBoardData {
    pub name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct TeamData {
+   pub name: String,
+   pub members: String,
+}

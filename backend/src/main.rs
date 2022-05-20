@@ -1,10 +1,12 @@
+use rocket::futures::future::join_all;
 use rocket::http::{Status};
 use types::{Credentials, TokenResponse };
 use db::Connection;
 use rocket::serde::json::Json;
 use crate::auth::ApiKey;
-use crate::types::PrivateBoardData;
+use crate::types::{PrivateBoardData, TeamData};
 use board::PrivateBoard;
+use team::Team;
 
 use self::auth::crypto::sha2::Sha256;
 use self::auth::jwt::{
@@ -15,6 +17,7 @@ use self::auth::jwt::{
 use user::User;
 
 pub mod types;
+pub mod team;
 pub mod auth;
 pub mod db;
 pub mod user;
@@ -79,6 +82,16 @@ async fn private_board(data: Json<PrivateBoardData>, connection: Connection, key
         _ => Err(Status::NotFound) 
     }
 }
+
+#[post("/team/create", data="<data>")]
+async fn team_create(data: Json<TeamData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status>{
+    let mut members: Vec<Option<i32>> = join_all(data.members.split(";").map(|x| async {User::get_username_id(x.to_string(), &connection).await})).await;
+    members.push(User::get_username_id(key.0, &connection).await);
+    match Team::create(members, data.name.clone(), &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -111,7 +124,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register, private_board])
+        .mount("/", routes![login, register, private_board, team_create])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

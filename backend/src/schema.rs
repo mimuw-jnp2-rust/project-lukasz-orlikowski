@@ -14,3 +14,17 @@ table! {
     }
 }
 
+table! {
+    team (id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+    }
+}
+
+table! {
+    team_user (id) {
+        id -> Nullable<Integer>,
+        team -> Integer,
+        user -> Integer,
+    }
+}

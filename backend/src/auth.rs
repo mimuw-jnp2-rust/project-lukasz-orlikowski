@@ -34,7 +34,6 @@ impl<'a> FromRequest<'a> for ApiKey {
         if keys.len() != 1 {
             return Outcome::Forward(());
         }
-        println!("{}", keys[0]);
         match read_token(keys[0]) {
             Ok(claim) => Outcome::Success(ApiKey(claim)),
             Err(_) => Outcome::Forward(())
