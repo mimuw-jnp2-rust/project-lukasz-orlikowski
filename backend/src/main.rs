@@ -95,8 +95,9 @@ async fn team_board(data: Json<TeamBoardData>, connection: Connection, key: ApiK
 #[post("/team/create", data="<data>")]
 async fn team_create(data: Json<TeamData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status>{
     let mut members: Vec<Option<i32>> = join_all(data.members.split(";").map(|x| async {User::get_username_id(x.to_string(), &connection).await})).await;
-    members.push(User::get_username_id(key.0, &connection).await);
-    match Team::create(members, data.name.clone(), &connection).await {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    members.push(user_id);
+    match Team::create(members, data.name.clone(), user_id.unwrap(),  &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
         _ => Err(Status::NotFound)
     }

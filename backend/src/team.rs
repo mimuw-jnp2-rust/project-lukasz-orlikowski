@@ -12,7 +12,8 @@ use crate::db::Connection;
 #[table_name = "team"]
 pub struct Team {
     pub id: Option<i32>,
-    pub name: String
+    pub name: String,
+    pub owner: i32
 }
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug)]
@@ -24,11 +25,11 @@ pub struct TeamUser {
 }
 
 impl Team {
-    pub async fn create (members: Vec<Option<i32>>, name: String, connection: &Connection) -> QueryResult <usize> {
+    pub async fn create (members: Vec<Option<i32>>, name: String, owner: i32, connection: &Connection) -> QueryResult <usize> {
         let copied_name = name.clone();
-        let rows_affected = connection.run(|conn| {
+        let rows_affected = connection.run(move |conn| {
             diesel::insert_into(team::table)
-                .values((team::name.eq(name)))
+                .values((team::name.eq(name), team::owner.eq(owner)))
                 .execute(conn)
            }).await;
 

@@ -18,6 +18,7 @@ table! {
     team (id) {
         id -> Nullable<Integer>,
         name -> Varchar,
+        owner -> Integer,
     }
 }
 
