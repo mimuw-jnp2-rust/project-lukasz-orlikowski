@@ -17,3 +17,9 @@ pub struct PrivateBoardData {
     pub name: String
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct TeamData {
+    pub name: String,
+    pub members: String
+}
+

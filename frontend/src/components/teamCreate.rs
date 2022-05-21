@@ -1,20 +1,20 @@
 use yew::{html, Component, Context, Html, MouseEvent};
 use gloo_storage::{LocalStorage, Storage};
 use crate::Route;
-use crate::api::{create_private_board};
+use crate::api::{create_team};
 use crate::utils::{getValue, Msg};
 use yew_router::prelude::*;
 use super::navbar::Navbar;
 
 
-pub struct PrivateBoardCreate {
+pub struct TeamCreate {
     error: bool,
     success: bool,
     token: Option<String>
 }
 
 
-impl Component for PrivateBoardCreate {
+impl Component for TeamCreate {
     type Message = Msg<bool>;
     type Properties = ();
 
@@ -41,8 +41,9 @@ impl Component for PrivateBoardCreate {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async move {
-                    let name = getValue("boardName");
-                    let res = create_private_board(name.as_str(), token.as_str()).await;
+                    let name = getValue("teamName");
+                    let members = getValue("teamMembers");
+                    let res = create_team(name.as_str(), members.as_str(), token.as_str()).await;
                     Self::Message::Res(res)
                 });
                 false
@@ -72,8 +73,13 @@ impl Component for PrivateBoardCreate {
                             <div>
                             <form>
                                 <div class="form-group">
-                                    <label for="boardName">{"Name"}</label>
-                                    <input type="email" class="form-control" id="boardName" aria-describedby="nameHelp" placeholder="Enter name"/>
+                                    <label for="teamName">{"Name"}</label>
+                                    <input type="text" class="form-control" id="teamName" aria-describedby="nameHelp" placeholder="Enter name"/>
+                                </div>
+                                <div class="form-group">
+                                    <label for="teamMembers">{"Team members"}</label>
+                                    <input type="text" class="form-control" id="teamMembers" aria-describedby="emailHelp" placeholder="Enter other team members"/>
+                                    <small id="emailHelp" class="form-text text-muted">{"Other members should be seperated by \";\". For example: \"a;b;c\"."}</small>
                                 </div>
                                 <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::Submit})}>{"Submit"}</button>
                             </form>
@@ -81,7 +87,7 @@ impl Component for PrivateBoardCreate {
                                 <p style="color: red;">{"Error occured. Please try again."}</p>
                             }
                             if self.success {
-                                <p style="color: green;">{"Board created successfully."}</p>
+                                <p style="color: green;">{"Team created successfully."}</p>
                             }
                             </div>
                         </div>
