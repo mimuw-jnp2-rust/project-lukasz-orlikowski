@@ -12,3 +12,8 @@ pub struct  Login {
     pub password: String
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct PrivateBoardData {
+    pub name: String
+}
+

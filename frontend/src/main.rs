@@ -1,6 +1,8 @@
 use yew::prelude::*;
 use components::login::{LoginForm};
 use components::register::{RegisterForm};
+use components::mainPage::Main;
+use components::privateBoardCreate::PrivateBoardCreate;
 
 mod components;
 mod api;
@@ -15,6 +17,10 @@ enum Route {
     Login,
     #[at("/register")]
     Register,
+    #[at("/index")]
+    Main,
+    #[at("private/create")]
+    PrivateBoardCreate
 }
 
 #[function_component(App)]
@@ -29,7 +35,9 @@ fn app() -> Html {
 fn switch(routes: &Route) -> Html {
     match routes {
         Route::Login => html! { <LoginForm /> },
-        Route::Register => html! { <RegisterForm /> }
+        Route::Register => html! { <RegisterForm /> },
+        Route::Main => html! {<Main />},
+        Route::PrivateBoardCreate => html!{<PrivateBoardCreate />}
     }
 }
 
