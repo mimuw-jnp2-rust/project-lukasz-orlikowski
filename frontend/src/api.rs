@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use gloo_net::Error;
 use wasm_bindgen::JsValue;
 
-use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData};
+use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData, Team, TeamBoardData};
 
 static BACKEND: &str = "http://localhost:8000/";
 
@@ -34,9 +34,20 @@ pub async fn create_private_board(name: &str, token: &str) -> Result<bool, Error
     Ok(res)
 }
 
+pub async fn create_team_board(name: &str, team: i32, token: &str) -> Result<bool, Error> {
+    let url = format!("{}{}", BACKEND, "team_board/create");
+    let body_obj = TeamBoardData{name: name.to_owned(), owner: team};
+    Request::post(url.as_str()).header("Authorization", &token).json(&body_obj)?.send().await?.json().await
+}
+
 pub async fn create_team(name: &str, members: &str, token: &str) -> Result<bool, Error> {
     let url = format!("{}{}", BACKEND, "team/create");
     let body_obj = TeamData{name: name.to_owned(), members: members.to_owned()};
     let res = Request::post(url.as_str()).header("Authorization", &token).json(&body_obj)?.send().await?.json().await?;
     Ok(res)
+}
+
+pub async fn get_user_teams(token: &str) -> Result<Vec<Team>, Error> {
+    let url = format!("{}{}", BACKEND, "owned");
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
 }

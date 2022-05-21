@@ -4,6 +4,7 @@ use components::register::{RegisterForm};
 use components::mainPage::Main;
 use components::privateBoardCreate::PrivateBoardCreate;
 use components::teamCreate::TeamCreate;
+use components::teamBoardCreate::TeamBoardCreate;
 
 mod components;
 mod api;
@@ -23,7 +24,9 @@ enum Route {
     #[at("private/create")]
     PrivateBoardCreate,
     #[at("team/create")]
-    TeamCreate
+    TeamCreate,
+    #[at("team_board/create")]
+    TeamBoardCreate
 }
 
 #[function_component(App)]
@@ -41,7 +44,8 @@ fn switch(routes: &Route) -> Html {
         Route::Register => html! { <RegisterForm /> },
         Route::Main => html! {<Main />},
         Route::PrivateBoardCreate => html!{<PrivateBoardCreate />},
-        Route::TeamCreate => html!{<TeamCreate />}
+        Route::TeamCreate => html!{<TeamCreate />},
+        Route::TeamBoardCreate => html!(<TeamBoardCreate />)
     }
 }
 
