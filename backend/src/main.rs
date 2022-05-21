@@ -102,6 +102,15 @@ async fn team_create(data: Json<TeamData>, connection: Connection, key: ApiKey) 
         _ => Err(Status::NotFound)
     }
 }
+
+#[get("/owned")]
+async fn owned(connection: Connection, key: ApiKey) -> Result<Json<Vec<Team>>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    match Team::get_owned(user_id.unwrap(), &connection).await {
+        Ok(teams) => Ok(Json(teams)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -134,7 +143,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register, private_board, team_create, team_board])
+        .mount("/", routes![login, register, private_board, team_create, team_board, owned])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

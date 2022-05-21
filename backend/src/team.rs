@@ -57,15 +57,19 @@ impl Team {
         }).await
     }
 
+    pub async fn get_owned(user_id: i32, connection: &Connection) -> QueryResult<Vec<Team>> {
+        connection.run(move |conn| {
+            team::table.filter(team::owner.eq(user_id)).load::<Team>(conn)
+        }).await
+    }
+
     pub async fn add (team_id: Option<i32>, user_id: Option<i32>, connection: &Connection) -> () {
-        println!("{:?} {:?}", team_id, user_id);
         match (team_id, user_id) {
             (Some(t_id), Some(u_id)) => {
                 connection.run(move |conn| {
                     let res = diesel::insert_into(team_user::table)
                         .values((team_user::user.eq(u_id), team_user::team.eq(t_id)))
                         .execute(conn);
-                        println!("Weszlo {:?}", res);
                    }).await;
             }
             _ => {()}
