@@ -4,8 +4,8 @@ use types::{Credentials, TokenResponse };
 use db::Connection;
 use rocket::serde::json::Json;
 use crate::auth::ApiKey;
-use crate::types::{PrivateBoardData, TeamData};
-use board::PrivateBoard;
+use crate::types::{PrivateBoardData, TeamData, TeamBoardData};
+use board::{PrivateBoard, TeamBoard};
 use team::Team;
 
 use self::auth::crypto::sha2::Sha256;
@@ -83,6 +83,15 @@ async fn private_board(data: Json<PrivateBoardData>, connection: Connection, key
     }
 }
 
+#[post("/team_board/create", data="<data>")]
+async fn team_board(data: Json<TeamBoardData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+        let board = TeamBoard{id: None, owner: data.owner, name: data.name.clone()};
+        match TeamBoard::create(board, &connection).await {
+            Ok(cnt) => Ok(Json(cnt > 0)),
+            _ => Err(Status::NotFound)
+        }
+}
+
 #[post("/team/create", data="<data>")]
 async fn team_create(data: Json<TeamData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status>{
     let mut members: Vec<Option<i32>> = join_all(data.members.split(";").map(|x| async {User::get_username_id(x.to_string(), &connection).await})).await;
@@ -124,7 +133,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register, private_board, team_create])
+        .mount("/", routes![login, register, private_board, team_create, team_board])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

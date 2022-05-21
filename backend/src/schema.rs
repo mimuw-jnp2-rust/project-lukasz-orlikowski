@@ -28,3 +28,11 @@ table! {
         user -> Integer,
     }
 }
+
+table! {
+    team_board (id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        owner -> Integer,
+    }
+}
