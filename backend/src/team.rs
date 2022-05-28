@@ -4,9 +4,14 @@ use diesel::Queryable;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
 use diesel::result::Error;
+use diesel::sql_query;
+use crate::board::TeamBoard;
+use crate::schema::team_board;
 use crate::schema::{team, team_user};
+use crate::types::TeamBoardWithName;
 use rocket::serde::{Deserialize, Serialize};
 use crate::db::Connection;
+
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug)]
 #[table_name = "team"]
@@ -74,5 +79,23 @@ impl Team {
             }
             _ => {()}
         }
+    }
+
+    pub async fn get_teams_boards(user_id: i32, connection: &Connection) -> QueryResult<Vec<TeamBoardWithName>> {
+        connection.run(move |conn| {
+            let  teamUser = team_user::table.filter(team_user::user.eq(user_id)).load::<TeamUser>(conn)?;
+            let mut teams = Vec::<Team>::new();
+            for team in teamUser {
+                let mut tmp = team::table.filter(team::id.eq(team.team)).load::<Team>(conn)?;
+                teams.append(&mut tmp);
+            }
+            let mut boards = Vec::<TeamBoardWithName>::new();
+            for team in teams {
+                let mut tmp = team_board::table.filter(team_board::owner.eq(team.id.unwrap())).load::<TeamBoard>(conn)?;
+                let mut board_team = TeamBoardWithName::new(tmp, team.name);
+                boards.append(&mut board_team);
+            }
+            Ok(boards)
+        }).await
     }
 }

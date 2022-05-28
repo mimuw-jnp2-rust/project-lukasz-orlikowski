@@ -5,3 +5,4 @@ pub mod mainPage;
 pub mod privateBoardCreate;
 pub mod teamCreate;
 pub mod teamBoardCreate;
+pub mod board;

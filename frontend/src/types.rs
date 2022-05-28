@@ -37,4 +37,27 @@ pub struct TeamBoardData {
     pub owner: i32
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, Properties)]
+pub struct TeamBoard {
+   pub id: Option<i32>,
+   pub name: String,
+   pub owner: i32,
+   pub team_name: String
+}
+
+#[derive(Serialize, Deserialize,Debug, Clone, PartialEq, Properties)]
+pub struct PrivateBoard {
+    pub id: Option<i32>,
+    pub name: String,
+    pub owner: i32
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct List {
+    pub id: Option<i32>,
+    pub name: String,
+    pub board: i32,
+    pub board_type: String
+}
 

@@ -37,3 +37,12 @@ table! {
         owner -> Integer,
     }
 }
+
+table! {
+    list(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        board -> Integer,
+        board_type -> Varchar,
+    }
+}

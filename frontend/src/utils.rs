@@ -1,4 +1,5 @@
 use gloo_net::Error;
+use gloo_storage::errors::StorageError;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(
@@ -11,4 +12,11 @@ extern "C" {
 pub enum Msg<T> {
     Submit,
     Res(Result<T, Error>)
+}
+
+pub fn map_token(token: Result<String, StorageError>) -> Option<String>{
+    match token {
+        Ok(key) => Some(key),
+        Err(_) => None
+    }
 }

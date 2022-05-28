@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use gloo_net::Error;
 use wasm_bindgen::JsValue;
 
-use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData, Team, TeamBoardData};
+use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData, Team, TeamBoardData, PrivateBoard, TeamBoard, List};
 
 static BACKEND: &str = "http://localhost:8000/";
 
@@ -49,5 +49,26 @@ pub async fn create_team(name: &str, members: &str, token: &str) -> Result<bool,
 
 pub async fn get_user_teams(token: &str) -> Result<Vec<Team>, Error> {
     let url = format!("{}{}", BACKEND, "owned");
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
+}
+
+pub async fn get_private_boards(token: &str) -> Result<Vec<PrivateBoard>, Error> {
+    log::info!("{}", &token);
+    let url = format!("{}{}", BACKEND, "private_board/get");
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
+}
+
+pub async fn get_team_boards(token: &str) -> Result<Vec<TeamBoard>, Error> {
+    let url = format!("{}{}", BACKEND, "team_board/get");
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
+}
+
+pub async fn create_list(token: &str, list: List) -> Result<bool, Error> {
+    let url = format!("{}{}", BACKEND, "new_list");
+    Request::post(url.as_str()).header("Authorization", &token).json(&list)?.send().await?.json().await
+}
+
+pub async fn get_lists(board_id: i32, board_type: String, token: &str) -> Result<Vec<List>, Error> {
+    let url = format!("{}{}/{}/{}", BACKEND, "list", board_type, board_id);
     Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
 }

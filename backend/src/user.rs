@@ -4,7 +4,9 @@ use diesel::Queryable;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
 use diesel::result::Error;
+use crate::board::PrivateBoard;
 use crate::schema::users;
+use crate::schema::private_board;
 use rocket::serde::{Deserialize, Serialize};
 use crate::db::Connection;
 
@@ -46,6 +48,12 @@ impl User {
                     None
                 }
             }
+        }).await
+    }
+
+    pub async fn get_private_boards(user_id: i32, connection: &Connection) -> QueryResult<Vec<PrivateBoard>> {
+        connection.run(move |conn| {
+            private_board::table.filter(private_board::owner.eq(user_id)).load::<PrivateBoard>(conn)
         }).await
     }
 

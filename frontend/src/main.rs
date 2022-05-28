@@ -5,6 +5,7 @@ use components::mainPage::Main;
 use components::privateBoardCreate::PrivateBoardCreate;
 use components::teamCreate::TeamCreate;
 use components::teamBoardCreate::TeamBoardCreate;
+use components::board::Board;
 
 mod components;
 mod api;
@@ -26,7 +27,9 @@ enum Route {
     #[at("team/create")]
     TeamCreate,
     #[at("team_board/create")]
-    TeamBoardCreate
+    TeamBoardCreate,
+    #[at("board")]
+    Board
 }
 
 #[function_component(App)]
@@ -45,7 +48,8 @@ fn switch(routes: &Route) -> Html {
         Route::Main => html! {<Main />},
         Route::PrivateBoardCreate => html!{<PrivateBoardCreate />},
         Route::TeamCreate => html!{<TeamCreate />},
-        Route::TeamBoardCreate => html!(<TeamBoardCreate />)
+        Route::TeamBoardCreate => html!(<TeamBoardCreate />),
+        Route::Board => html!(<Board />)
     }
 }
 

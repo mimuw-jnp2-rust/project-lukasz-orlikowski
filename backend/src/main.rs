@@ -4,9 +4,10 @@ use types::{Credentials, TokenResponse };
 use db::Connection;
 use rocket::serde::json::Json;
 use crate::auth::ApiKey;
-use crate::types::{PrivateBoardData, TeamData, TeamBoardData};
+use crate::types::{PrivateBoardData, TeamData, TeamBoardData, TeamBoardWithName};
 use board::{PrivateBoard, TeamBoard};
 use team::Team;
+use list::List;
 
 use self::auth::crypto::sha2::Sha256;
 use self::auth::jwt::{
@@ -23,6 +24,7 @@ pub mod db;
 pub mod user;
 pub mod schema;
 pub mod board;
+pub mod list;
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
@@ -111,6 +113,43 @@ async fn owned(connection: Connection, key: ApiKey) -> Result<Json<Vec<Team>>, S
         _ => Err(Status::NotFound)
     }
 }
+
+#[get("/private_board/get")]
+async fn get_private_boards(connection: Connection, key: ApiKey) -> Result<Json<Vec<PrivateBoard>>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    println!("user_id: {:?}", user_id);
+    match User::get_private_boards(user_id.unwrap(), &connection).await {
+        Ok(boards) => Ok(Json(boards)),
+        Err(sth) => {println!("{:?}", sth);Err(Status::NotFound)}
+    }
+}
+
+#[get("/team_board/get")]
+async fn get_team_boards(connection: Connection, key: ApiKey) -> Result<Json<Vec<TeamBoardWithName>>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    match Team::get_teams_boards(user_id.unwrap(), &connection).await {
+        Ok(boards) => Ok(Json(boards)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[post("/new_list", data="<data>")]
+async fn new_list(data: Json<List>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    let list = List { ..data.into_inner() };
+    match List::create(list, user_id.unwrap(), &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/list/<board_type>/<id>")]
+async fn get_list(board_type: String, id: i32, connection: Connection, ket: ApiKey) -> Result<Json<Vec<List>>, Status> {
+    match List::get(board_type, id, &connection).await {
+        Ok(lists) => Ok(Json(lists)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -143,7 +182,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register, private_board, team_create, team_board, owned])
+        .mount("/", routes![login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, new_list, get_list])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;
