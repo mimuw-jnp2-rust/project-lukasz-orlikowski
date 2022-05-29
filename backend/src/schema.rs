@@ -46,3 +46,14 @@ table! {
         board_type -> Varchar,
     }
 }
+
+table! {
+    task(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        list -> Integer,
+        note -> Nullable<Varchar>,
+        place -> Nullable<Varchar>,
+        members -> Nullable<Varchar>,
+    }
+}

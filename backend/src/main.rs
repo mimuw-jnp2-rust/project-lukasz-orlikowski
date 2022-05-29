@@ -16,8 +16,10 @@ use self::auth::jwt::{
     Token,
 };
 use user::User;
+use task::Task;
 
 pub mod types;
+pub mod task;
 pub mod team;
 pub mod auth;
 pub mod db;
@@ -144,9 +146,53 @@ async fn new_list(data: Json<List>, connection: Connection, key: ApiKey) -> Resu
 }
 
 #[get("/list/<board_type>/<id>")]
-async fn get_list(board_type: String, id: i32, connection: Connection, ket: ApiKey) -> Result<Json<Vec<List>>, Status> {
+async fn get_list(board_type: String, id: i32, connection: Connection, key: ApiKey) -> Result<Json<Vec<List>>, Status> {
     match List::get(board_type, id, &connection).await {
         Ok(lists) => Ok(Json(lists)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/task/get/<id>")]
+async fn get_task(id: i32, connection: Connection, key: ApiKey) -> Result<Json<Vec<Task>>, Status> {
+    println!("allla");
+    match Task::get(id, &connection).await {
+        Ok(tasks) => Ok(Json(tasks)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/private/delete/<id>")]
+async fn delete_private(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match PrivateBoard::delete(id, &connection).await {
+        Ok(_) => Ok(Json(true)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/team_board/delete/<id>")]
+async fn delete_team_board(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match TeamBoard::delete(id, &connection).await {
+        Ok(_) => Ok(Json(true)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+
+#[get("/task/delete/<id>")]
+async fn delete_task(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match Task::delete(id, &connection).await {
+        Ok(_) => Ok(Json(true)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+
+#[post("/task/create", data="<data>")]
+async fn create_task(data: Json<Task>, connection: Connection, ket: ApiKey) -> Result<Json<bool>, Status> {
+    let task = Task {..data.into_inner()};
+    match Task::create(task, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
         _ => Err(Status::NotFound)
     }
 }
@@ -182,7 +228,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, new_list, get_list])
+        .mount("/", routes![delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

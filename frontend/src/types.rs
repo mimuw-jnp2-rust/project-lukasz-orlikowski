@@ -53,11 +53,22 @@ pub struct PrivateBoard {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
 pub struct List {
     pub id: Option<i32>,
     pub name: String,
     pub board: i32,
     pub board_type: String
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Task {
+    pub id: Option<i32> ,
+    pub name: String,
+    pub list: i32,
+    pub note: Option<String>,
+    pub place: Option<String>,
+    pub members: Option<String>,
+}
+
 

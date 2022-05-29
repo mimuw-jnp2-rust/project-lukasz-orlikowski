@@ -32,6 +32,12 @@ impl PrivateBoard {
              .execute(conn)
         }).await
      }
+
+    pub async fn delete(id: i32, connection: &Connection) ->QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::delete(private_board::table.filter(private_board::id.eq(id))).execute(conn)
+        }).await
+    }
 }
 
 impl TeamBoard {
@@ -42,4 +48,11 @@ impl TeamBoard {
              .execute(conn)
         }).await
      }
+
+
+    pub async fn delete(id: i32, connection: &Connection) ->QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::delete(team_board::table.filter(team_board::id.eq(id))).execute(conn)
+        }).await
+    }
 }

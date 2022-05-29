@@ -50,6 +50,9 @@ impl Component for LoginForm {
     
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.login {
+            return html! {<Redirect<Route> to={Route::Main}/>}
+        }
         html! {
             <div class="d-flex justify-content-md-center align-items-center vh-100">
                 <div>

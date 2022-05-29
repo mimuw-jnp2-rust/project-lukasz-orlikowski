@@ -7,16 +7,16 @@ pub fn app() -> Html {
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
             <li class="nav-item">
-              <a class="nav-link" href="">{"Home"}</a>
+              <a class="nav-link" href="/index">{"Home"}</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">{"Add private board"}</a>
+              <a class="nav-link" href="/private/create">{"Add private board"}</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">{"Create team"}</a>
+              <a class="nav-link" href="/team/create">{"Create team"}</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">{"Add team board"}</a>
+              <a class="nav-link" href="/team_board/create">{"Add team board"}</a>
             </li>
           </ul>
         </div>

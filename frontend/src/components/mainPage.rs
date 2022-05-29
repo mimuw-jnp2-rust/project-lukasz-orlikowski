@@ -1,33 +1,101 @@
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{Component, Context, Html, html, MouseEvent, function_component};
-use crate::{types::{PrivateBoard, TeamBoard}, api::{get_private_boards, get_team_boards}};
+use crate::{types::{PrivateBoard, TeamBoard}, api::{get_private_boards, get_team_boards, delete_private, delete_team_board}, utils::map_token};
 use yew_router::prelude::*;
 use super::navbar::{Navbar};
 use crate::Route;
 
-#[function_component(TeamDetails)]
-fn team_details(TeamBoard {team_name, id, name, owner}: &TeamBoard) -> Html {
-    html! {
-        <div class="card" style="width: 18rem;">
-            <div class="card-body">
-                <h5 class="card-title">{name}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{team_name}</h6>
-                <a href="#" class="card-link">{"Open"}</a>
+
+pub struct TeamDetails {
+    pub token: String
+}
+
+pub enum MsgBoard {
+    Delete,
+    Return
+}
+
+impl Component for TeamDetails {
+    type Message = MsgBoard;
+    type Properties = TeamBoard;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {
+            token: map_token(LocalStorage::get("Token")).unwrap(),
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+        Self::Message::Delete => {
+            let token = self.token.clone();
+            let id = ctx.props().id;
+            ctx.link().send_future(async move {
+                delete_team_board(&token, id.unwrap()).await;
+                Self::Message::Return
+            });
+            false
+            }
+        _ => {true}
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">{&ctx.props().name}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{&ctx.props().team_name}</h6>
+                    <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="card-link">{"Open"}</a>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
+                </div>
             </div>
-        </div>
+        }
     }
 }
 
-#[function_component(PrivateDetails)]
-fn private_details(PrivateBoard {name, owner, id}: &PrivateBoard) -> Html {
-    html! {
-        <div class="card" style="width: 18rem;">
-            <div class="card-body">
-                <h5 class="card-title">{name}</h5>
-                <a href="#" class="card-link">{"Open"}</a>
+
+
+pub struct PrivateDetails {
+    pub token: String
+}
+
+impl Component for PrivateDetails {
+    type Message = MsgBoard;
+    type Properties = PrivateBoard;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {
+            token: map_token(LocalStorage::get("Token")).unwrap(),
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+        Self::Message::Delete => {
+            let token = self.token.clone();
+            let id = ctx.props().id;
+            ctx.link().send_future(async move {
+                delete_private(&token, id.unwrap()).await;
+                Self::Message::Return
+            });
+            false
+            }
+        _ => {true}
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">{&ctx.props().name}</h5>
+                    <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="card-link">{"Open"}</a>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
+                </div>
             </div>
-        </div>
+        }
     }
 }
 
