@@ -3,6 +3,7 @@ use diesel::Insertable;
 use diesel::Queryable;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
+use crate::list::List;
 use crate::schema::private_board;
 use crate::schema::team_board;
 use crate::types::BoardUpdate;
@@ -35,9 +36,11 @@ impl PrivateBoard {
      }
 
     pub async fn delete(id: i32, connection: &Connection) ->QueryResult<usize> {
-        connection.run(move |conn| {
+        let cnt = connection.run(move |conn| {
             diesel::delete(private_board::table.filter(private_board::id.eq(id))).execute(conn)
-        }).await
+        }).await?;
+        List::delete_by_board("private".to_string(), id, connection).await?;
+        Ok(cnt)
     }
 
     pub async fn update(board: BoardUpdate, id: i32, connection: &Connection) -> QueryResult<usize> {
@@ -60,9 +63,11 @@ impl TeamBoard {
 
 
     pub async fn delete(id: i32, connection: &Connection) ->QueryResult<usize> {
-        connection.run(move |conn| {
+        let cnt = connection.run(move |conn| {
             diesel::delete(team_board::table.filter(team_board::id.eq(id))).execute(conn)
-        }).await
+        }).await?;
+        List::delete_by_board("team".to_string(), id, connection).await?;
+        Ok(cnt)
     }
 
     pub async fn update(board: BoardUpdate, id: i32, connection: &Connection) -> QueryResult<usize> {

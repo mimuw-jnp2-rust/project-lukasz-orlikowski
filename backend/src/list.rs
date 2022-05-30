@@ -3,6 +3,7 @@ use diesel::Insertable;
 use diesel::Queryable;
 use diesel::prelude::*;
 use diesel::SqliteConnection;
+use crate::board;
 use crate::schema::list;
 use rocket::serde::{Deserialize, Serialize};
 use crate::db::Connection;
@@ -30,5 +31,17 @@ impl List {
         connection.run(move |conn| {
             list::table.filter(list::board_type.eq(board_type)).filter(list::board.eq(board_id)).load::<List>(conn)
         }).await
-    } 
+    }
+    
+    pub async fn delete(id: i32, connection: &Connection) -> QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::delete(list::table.filter(list::id.eq(id))).execute(conn)
+        }).await
+    }
+    
+    pub async fn delete_by_board(board_type: String, board: i32, connection: &Connection) -> QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::delete(list::table.filter(list::board_type.eq(board_type)).filter(list::board.eq(board))).execute(conn)
+        }).await
+    }
 }

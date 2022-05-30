@@ -73,6 +73,11 @@ pub async fn update_board(token: &str, id: i32, name: String, board_type: &str) 
     Request::post(url.as_str()).header("Authorization", &token).json(&board)?.send().await?.json().await
 }
 
+pub async fn delete_list(token: &str, id: i32) -> Result<bool, Error> {
+    let url = format!("{}list_delete/{}", BACKEND, id);
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
+}
+
 pub async fn create_task(token: &str, task: Task) -> Result<bool, Error> {
     let url = format!("{}{}", BACKEND, "task/create");
     Request::post(url.as_str()).header("Authorization", &token).json(&task)?.send().await?.json().await

@@ -5,5 +5,5 @@ CREATE TABLE task (
   `note` VARCHAR(200),
   `place` VARCHAR(60),
   `members` VARCHAR(200),
-   FOREIGN KEY(`list`) REFERENCES list(id)
+   FOREIGN KEY(`list`) REFERENCES list(id) ON DELETE CASCADE
 )

@@ -228,6 +228,14 @@ async fn update_team(data: Json<BoardUpdate>, id: i32, connection: Connection, k
         _ => Err(Status::NotFound)
     }
 }
+
+#[get("/list_delete/<id>")]
+async fn delete_list(id: i32, connection: Connection, ket: ApiKey) -> Result<Json<bool>, Status> {
+    match List::delete(id, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -260,7 +268,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![update_team, update_private, update_task, get_tasks, delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
+        .mount("/", routes![delete_list, update_team, update_private, update_task, get_tasks, delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

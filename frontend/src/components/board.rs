@@ -3,7 +3,7 @@ use gloo_storage::{Storage, LocalStorage};
 use wasm_bindgen::prelude::wasm_bindgen;
 use yew::{Component, Context, Html, html, MouseEvent, function_component, Properties};
 
-use crate::{utils::{getValue, map_token, setValue, openModal, getParameter, hideModal}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task}, Route, types::{List, Task}};
+use crate::{utils::{getValue, map_token, setValue, openModal, getParameter, hideModal, reload}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task, delete_list}, Route, types::{List, Task}};
 use yew_router::prelude::*;
 use super::navbar::Navbar;
 
@@ -31,6 +31,7 @@ pub enum MsgList {
     Delete(Option<i32>),
     Return,
     UpdateTask(Option<i32>),
+    DeleteList
 }
 
 impl Component for ListDetails {
@@ -53,17 +54,26 @@ impl Component for ListDetails {
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
                     delete_task(&token, id.unwrap()).await;
+                    let _ = reload();
+                    Self::Message::Return
+                });
+                false
+            }
+            Self::Message::DeleteList => {
+                let id = ctx.props().id;
+                let token = self.token.clone().unwrap();
+                ctx.link().send_future(async move {
+                    let _ = delete_list(&token, id).await;
+                    let _ = reload();
                     Self::Message::Return
                 });
                 false
             }
             Self::Message::UpdateTask(id) => {
                 self.id = id.clone();
-                log::info!("{:?}", self.id);
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
                     let task = get_task(&token, id.unwrap()).await;
-                    log::info!("{:?}", task);
                     if task.is_err() {
                         return Self::Message::Return;
                     }
@@ -134,6 +144,7 @@ impl Component for ListDetails {
             <>
                 <div class="col-xs-6" style="padding-left: 80px;">
                     <h2>{&ctx.props().name}</h2>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::DeleteList})}>{"Delete"}</button>
                     {for tasks}
                 </div>
                 <div class="col-xs-6 vl"></div>
