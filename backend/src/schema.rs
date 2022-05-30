@@ -55,5 +55,7 @@ table! {
         note -> Nullable<Varchar>,
         place -> Nullable<Varchar>,
         members -> Nullable<Varchar>,
+        deadline -> Varchar,
+        subtasks -> Varchar,
     }
 }

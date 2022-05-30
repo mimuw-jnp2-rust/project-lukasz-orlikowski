@@ -17,6 +17,8 @@ pub struct Task {
     pub note: Option<String>,
     pub place: Option<String>,
     pub members: Option<String>,
+    pub deadline: String,
+    pub subtasks: String,
 }
 
 impl Task {

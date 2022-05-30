@@ -18,6 +18,24 @@ fn list_options(List {id, name, board, board_type}: &List) -> Html {
     }
 }
 
+#[derive(PartialEq, Properties)]
+pub struct SubTasksProps {
+    pub subtasks: String
+}
+
+#[function_component(SubTasks)]
+fn sub_tasks(SubTasksProps {subtasks}: &SubTasksProps) -> Html {
+    let sub_tasks = subtasks.split(";").into_iter().map(|subtask| html! {
+        <h6 class="card-subtitle mb-2 text-muted">{"Subtask:"}{subtask}</h6>
+    });
+    html! {
+        <>
+        <h5 class="card-title">{"Subtasks"}</h5>
+        {for sub_tasks}
+        </>
+    }
+}
+
 
 
 struct ListDetails {
@@ -39,7 +57,6 @@ impl Component for ListDetails {
     type Properties = ListProp;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        log::info!("bylo");
         Self {
             tasks: None,
             token: map_token(LocalStorage::get("Token")),
@@ -103,6 +120,8 @@ impl Component for ListDetails {
                         setValue("membersUpdate", "");
                     }
 
+                    setValue("deadlineUpdate", task.deadline.as_str());
+
                     setValue("listUpdate", task.list.to_string().as_str());
                         Self::Message::Return
                 });
@@ -130,6 +149,8 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Note:"}{task.note.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{task.place.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{task.members.unwrap()}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{task.deadline}</h6>
+                    <SubTasks subtasks={task.subtasks.clone()}/>
                     <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
                     <button class="btn btn-primary" onclick={ctx.link().callback(move |e: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
                 </div>
@@ -144,7 +165,7 @@ impl Component for ListDetails {
             <>
                 <div class="col-xs-6" style="padding-left: 80px;">
                     <h2>{&ctx.props().name}</h2>
-                    <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::DeleteList})}>{"Delete"}</button>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::DeleteList})}>{"Delete list"}</button>
                     {for tasks}
                 </div>
                 <div class="col-xs-6 vl"></div>
@@ -222,8 +243,10 @@ impl Component for Board {
                 let members = getValue("members");
                 let list = getValue("list").parse::<i32>().unwrap();
                 let token = self.token.clone().unwrap();
+                let deadline = getValue("deadline");
+                let subtasks = getValue("subtasks");
                 ctx.link().send_future(async move {
-                    let res = create_task(&token, Task{id: None, name, note: Some(note), place: Some(place), members: Some(members), list}).await;
+                    let res = create_task(&token, Task{subtasks, deadline, id: None, name, note: Some(note), place: Some(place), members: Some(members), list}).await;
                     Self::Message::Res(res) 
                 });
                 false
@@ -236,8 +259,10 @@ impl Component for Board {
                 let members = getValue("membersUpdate");
                 let list = getValue("listUpdate").parse::<i32>().unwrap();
                 let id = getValue("idUpdate").parse::<i32>().unwrap();
+                let deadline = getValue("deadlineUpdate");
+                let subtasks = getValue("subtasksUpdate");
                 ctx.link().send_future(async move {
-                    let res = update_task(&token, Task{id: Some(id), name, note: Some(note), place: Some(place), members: Some(members), list}).await;
+                    let res = update_task(&token, Task{subtasks, id: Some(id), name, note: Some(note), place: Some(place), members: Some(members), list, deadline}).await;
                     Self::Message::Res(res)
                 });
                 false
@@ -315,10 +340,21 @@ impl Component for Board {
                             <input type="text" class="form-control" id="members" aria-describedby="usernameHelp" placeholder="Enter assigned people"/>
                             <small id="emailHelp" class="form-text text-muted">{"Assigned people should be seperated by ;"}</small>
                         </div>
-                        <label for="team">{"Choose list:"}</label>
-                            <select id="list" name="team">
-                                {for lists_options}
-                            </select>
+                        <div class="form-group">
+                            <label for="deadline">{"Deadline:"}</label>
+                            <input type="date" class="form-control" id="deadline"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="subtasks">{"Subtasks:"}</label>
+                            <input type="text" class="form-control" id="subtasks"/>
+                            <small id="subTasksHelp" class="form-text text-muted">{"Subtasks should be seperated by ;"}</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="team">{"Choose list:"}</label>
+                                <select id="list" name="team">
+                                    {for lists_options}
+                                </select>
+                        </div>
                         <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::AddTask})}>{"Submit"}</button>
                     </form>
                     </div>
@@ -350,10 +386,21 @@ impl Component for Board {
                         <input type="text" class="form-control" id="membersUpdate" aria-describedby="usernameHelp" placeholder="Enter assigned people"/>
                         <small id="emailHelp" class="form-text text-muted">{"Assigned people should be seperated by ;"}</small>
                     </div>
+                    <div class="form-group">
+                            <label for="deadlineUpdate">{"Deadline:"}</label>
+                            <input type="date" class="form-control" id="deadlineUpdate"/>
+                    </div>
+                    <div class="form-group">
+                            <label for="subtasksUpdate">{"Subtasks:"}</label>
+                            <input type="text" class="form-control" id="subtasksUpdate"/>
+                            <small id="subTasksHelpUpdate" class="form-text text-muted">{"Subtasks should be seperated by ;"}</small>
+                    </div>
+                    <div class="form-group">
                     <label for="team">{"Choose list:"}</label>
                         <select id="listUpdate" name="team">
                             {for lists_options_copy}
                         </select>
+                    </div>
                     <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Self::Message::UpdateTaskSubmit})}>{"Submit"}</button>
                 </form>
                 </div>
