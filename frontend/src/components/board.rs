@@ -3,7 +3,7 @@ use gloo_storage::{Storage, LocalStorage};
 use wasm_bindgen::prelude::wasm_bindgen;
 use yew::{Component, Context, Html, html, MouseEvent, function_component, Properties};
 
-use crate::{utils::{getValue, map_token}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task}, Route, types::{List, Task}};
+use crate::{utils::{getValue, map_token}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task}, Route, types::{List, Task}};
 use yew_router::prelude::*;
 use super::navbar::Navbar;
 
@@ -23,27 +23,41 @@ extern "C" {
 }
 
 #[wasm_bindgen(
-    inline_js = "export function openModal() { 
-        var modal = document.getElementById(\"myModal\");
+    inline_js = "export function openModal(input) { 
+        var modal = document.getElementById(input);
         modal.style.display = \"block\";
         return true;
      }"
 )]
 
 extern "C" {
-    pub fn openModal() -> bool;
+    pub fn openModal(input: &str) -> bool;
 }
 
 #[wasm_bindgen(
-    inline_js = "export function hideModal() { 
-        var modal = document.getElementById(\"myModal\");
+    inline_js = "export function hideModal(input) { 
+        var modal = document.getElementById(input);
         modal.style.display = \"none\";
         return true;
      }"
 )]
 
+
+
 extern "C" {
-    pub fn hideModal() -> bool;
+    pub fn hideModal(input: &str) -> bool;
+}
+
+#[wasm_bindgen(
+    inline_js = "export function setValue(input, value) { 
+        var el = document.getElementById(input);
+        el.value = value;
+        return true;
+     }"
+)]
+
+extern "C" {
+    pub fn setValue(input: &str, value: &str) -> bool;
 }
 
 #[function_component(ListOptions)]
@@ -57,13 +71,15 @@ fn list_options(List {id, name, board, board_type}: &List) -> Html {
 
 struct ListDetails {
     tasks: Option<Vec<Task>>,
-    token: Option<String>
+    token: Option<String>,
+    id: Option<i32>
 }
 
 pub enum MsgList {
     Update(Result<Vec<Task>, Error>),
     Delete(Option<i32>),
-    Return
+    Return,
+    UpdateTask(Option<i32>),
 }
 
 impl Component for ListDetails {
@@ -71,26 +87,68 @@ impl Component for ListDetails {
     type Properties = ListProp;
 
     fn create(_ctx: &Context<Self>) -> Self {
+        log::info!("bylo");
         Self {
             tasks: None,
             token: map_token(LocalStorage::get("Token")),
+            id: None
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Self::Message::Update(Ok(tasks)) => {self.tasks = Some(tasks);}
+            Self::Message::Update(Ok(tasks)) => {self.tasks = Some(tasks); true}
             Self::Message::Delete(id) => {
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
                     delete_task(&token, id.unwrap()).await;
                     Self::Message::Return
                 });
+                false
             }
-            _ => {}
+            Self::Message::UpdateTask(id) => {
+                self.id = id.clone();
+                log::info!("{:?}", self.id);
+                let token = self.token.clone().unwrap();
+                ctx.link().send_future(async move {
+                    let task = get_task(&token, id.unwrap()).await;
+                    log::info!("{:?}", task);
+                    if task.is_err() {
+                        return Self::Message::Return;
+                    }
+                    let task = task.unwrap();
+
+                    setValue("idUpdate", id.unwrap().to_string().as_str());
+                    setValue("nameUpdateTask", task.name.as_str());
+
+                    if task.note.is_some() {
+                        setValue("noteUpdate", task.note.unwrap().as_str());
+                    }
+                    else {
+                        setValue("noteUpdate", "");
+                    }
+
+                    if task.place.is_some() {
+                        setValue("placeUpdate", task.place.unwrap().as_str());
+                    }
+                    else {
+                        setValue("placeUpdate", "");
+                    }
+
+                    if task.members.is_some() {
+                        setValue("membersUpdate", task.members.unwrap().as_str());
+                    }
+                    else {
+                        setValue("membersUpdate", "");
+                    }
+
+                    setValue("listUpdate", task.list.to_string().as_str());
+                        Self::Message::Return
+                });
+                true
+            }
+            _ => {true}
         }
-        
-        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -112,9 +170,15 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{task.place.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{task.members.unwrap()}</h6>
                     <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(move |e: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
                 </div>
             </div>
         });
+
+        //let lists_options = ctx.props().lists.clone();
+        //let lists_options = lists_options.unwrap().into_iter().map(|list| html! {
+          //                      <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
+            //                });
         html! {
             <>
                 <div class="col-xs-6" style="padding-left: 80px;">
@@ -131,6 +195,7 @@ impl Component for ListDetails {
 struct ListProp {
     pub name: String,
     pub id: i32,
+    lists: Option<Vec<List>>
 }
 
 pub struct Board {
@@ -145,6 +210,7 @@ pub enum Msg {
     Submit,
     Res(Result<bool, Error>),
     Update(Result<Vec<List>, Error>),
+    UpdateTaskSubmit,
     AddTask
 }
 
@@ -200,6 +266,20 @@ impl Component for Board {
                 });
                 false
             }
+            Self::Message::UpdateTaskSubmit => {
+                let token = self.token.clone().unwrap();
+                let name = getValue("nameUpdateTask");
+                let note = getValue("noteUpdate");
+                let place = getValue("placeUpdate");
+                let members = getValue("membersUpdate");
+                let list = getValue("listUpdate").parse::<i32>().unwrap();
+                let id = getValue("idUpdate").parse::<i32>().unwrap();
+                ctx.link().send_future(async move {
+                    let res = update_task(&token, Task{id: Some(id), name, note: Some(note), place: Some(place), members: Some(members), list}).await;
+                    Self::Message::Res(res)
+                });
+                false
+            }
             _ => {
                 self.error = true;
                 true
@@ -222,13 +302,15 @@ impl Component for Board {
             return html!{}
         }
         let lists = self.lists.clone();
+        let lists_clone = lists.clone();
         let lists = lists.unwrap().into_iter().map(|list| html! {
-                        <ListDetails name={list.name} id ={list.id.unwrap()}/>
+                        <ListDetails name={list.name.clone()} id ={list.id.unwrap()} lists={lists_clone.clone()}/>
                     });
         let lists_options = self.lists.clone();
         let lists_options = lists_options.unwrap().into_iter().map(|list| html! {
                                 <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
                             });
+        let lists_options_copy = lists_options.clone();
         html! {
             <>
             <Navbar />
@@ -247,12 +329,12 @@ impl Component for Board {
                     }
                 </div>
                 <div class="col-xs-6" style="padding-left: 80px;">
-                    <button class="btn btn-primary" id="myBtn" onclick={|e: MouseEvent| {openModal();}} >{"Add task"}</button>
+                    <button class="btn btn-primary" id="myBtn" onclick={|e: MouseEvent| {openModal("myModal");}} >{"Add task"}</button>
 
                     <div id="myModal" class="modal">
 
                     <div class="modal-content">
-                        <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal();}}>{"Hide"}</span>
+                        <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
                         <form>
                         <div class="form-group">
                             <label for="name">{"name"}</label>
@@ -280,6 +362,39 @@ impl Component for Board {
                     </div>
 
                     </div>
+                </div>
+                <div id="taskUpdate" class="modal">
+
+                <div class="modal-content">
+                    <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("taskUpdate");}}>{"Hide"}</span>
+                    <form>
+                    <div class="form-group">
+                        <label for="name">{"name"}</label>
+                        <input type="text" class="form-control" id="nameUpdateTask" aria-describedby="usernameHelp" placeholder="Enter new task name"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">{"note"}</label>
+                        <input type="text" class="form-control" id="noteUpdate" aria-describedby="usernameHelp" placeholder="Enter note"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="place">{"place"}</label>
+                        <input type="text" class="form-control" id="placeUpdate" aria-describedby="usernameHelp" placeholder="Enter place"/>
+                    </div>
+                    <div class="form-group">
+                        <input type="hidden" class="form-control" id="idUpdate" aria-describedby="usernameHelp" placeholder="Enter place"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="members">{"Assigned people"}</label>
+                        <input type="text" class="form-control" id="membersUpdate" aria-describedby="usernameHelp" placeholder="Enter assigned people"/>
+                        <small id="emailHelp" class="form-text text-muted">{"Assigned people should be seperated by ;"}</small>
+                    </div>
+                    <label for="team">{"Choose list:"}</label>
+                        <select id="listUpdate" name="team">
+                            {for lists_options_copy}
+                        </select>
+                    <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Self::Message::UpdateTaskSubmit})}>{"Submit"}</button>
+                </form>
+                </div>
                 </div>
             </div>
             </>

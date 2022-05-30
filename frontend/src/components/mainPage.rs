@@ -47,7 +47,7 @@ impl Component for TeamDetails {
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{&ctx.props().team_name}</h6>
-                    <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="card-link">{"Open"}</a>
+                    <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
                 </div>
             </div>
@@ -91,7 +91,7 @@ impl Component for PrivateDetails {
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
-                    <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="card-link">{"Open"}</a>
+                    <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
                 </div>
             </div>

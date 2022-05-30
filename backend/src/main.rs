@@ -154,10 +154,17 @@ async fn get_list(board_type: String, id: i32, connection: Connection, key: ApiK
 }
 
 #[get("/task/get/<id>")]
-async fn get_task(id: i32, connection: Connection, key: ApiKey) -> Result<Json<Vec<Task>>, Status> {
-    println!("allla");
+async fn get_tasks(id: i32, connection: Connection, key: ApiKey) -> Result<Json<Vec<Task>>, Status> {
     match Task::get(id, &connection).await {
         Ok(tasks) => Ok(Json(tasks)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/task/<id>")]
+async fn get_task(id: i32, connection: Connection, key: ApiKey) -> Result<Json<Task>, Status> {
+    match Task::get_single(id, &connection).await {
+        Ok(task) => Ok(Json(task)),
         _ => Err(Status::NotFound)
     }
 }
@@ -196,6 +203,15 @@ async fn create_task(data: Json<Task>, connection: Connection, ket: ApiKey) -> R
         _ => Err(Status::NotFound)
     }
 }
+
+#[post("/task/update", data="<data>")]
+async fn update_task(data: Json<Task>, connection: Connection, ket: ApiKey) -> Result<Json<bool>, Status> {
+    let task = Task {..data.into_inner()};
+    match Task::update(task, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -228,7 +244,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
+        .mount("/", routes![update_task, get_tasks, delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;

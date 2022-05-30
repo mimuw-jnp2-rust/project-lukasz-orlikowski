@@ -53,7 +53,6 @@ pub async fn get_user_teams(token: &str) -> Result<Vec<Team>, Error> {
 }
 
 pub async fn get_private_boards(token: &str) -> Result<Vec<PrivateBoard>, Error> {
-    log::info!("{}", &token);
     let url = format!("{}{}", BACKEND, "private_board/get");
     Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
 }
@@ -73,6 +72,11 @@ pub async fn create_task(token: &str, task: Task) -> Result<bool, Error> {
     Request::post(url.as_str()).header("Authorization", &token).json(&task)?.send().await?.json().await
 }
 
+pub async fn update_task(token: &str, task: Task) -> Result<bool, Error> {
+    let url = format!("{}{}", BACKEND, "task/update");
+    Request::post(url.as_str()).header("Authorization", &token).json(&task)?.send().await?.json().await
+}
+
 
 pub async fn get_lists(board_id: i32, board_type: String, token: &str) -> Result<Vec<List>, Error> {
     let url = format!("{}{}/{}/{}", BACKEND, "list", board_type, board_id);
@@ -81,6 +85,11 @@ pub async fn get_lists(board_id: i32, board_type: String, token: &str) -> Result
 
 pub async fn get_tasks(token: &str, list_id: i32) -> Result<Vec<Task>, Error> {
     let url = format!("{}{}{}", BACKEND, "task/get/", list_id);
+    Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
+}
+
+pub async fn get_task(token: &str, id: i32) -> Result<Task, Error> {
+    let url = format!("{}{}{}", BACKEND, "task/", id);
     Request::get(url.as_str()).header("Authorization", &token).send().await?.json().await
 }
 
