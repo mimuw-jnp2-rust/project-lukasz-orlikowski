@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use gloo_net::Error;
 use wasm_bindgen::JsValue;
 
-use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData, Team, TeamBoardData, PrivateBoard, TeamBoard, List, Task};
+use crate::types::{LoginResponse, Login, PrivateBoardData, TeamData, Team, TeamBoardData, PrivateBoard, TeamBoard, List, Task, BoardUpdate};
 
 static BACKEND: &str = "http://localhost:8000/";
 
@@ -65,6 +65,12 @@ pub async fn get_team_boards(token: &str) -> Result<Vec<TeamBoard>, Error> {
 pub async fn create_list(token: &str, list: List) -> Result<bool, Error> {
     let url = format!("{}{}", BACKEND, "new_list");
     Request::post(url.as_str()).header("Authorization", &token).json(&list)?.send().await?.json().await
+}
+
+pub async fn update_board(token: &str, id: i32, name: String, board_type: &str) -> Result<bool, Error> {
+    let url = format!("{}{}/update/{}", BACKEND, board_type, id);
+    let board = BoardUpdate {name};
+    Request::post(url.as_str()).header("Authorization", &token).json(&board)?.send().await?.json().await
 }
 
 pub async fn create_task(token: &str, task: Task) -> Result<bool, Error> {

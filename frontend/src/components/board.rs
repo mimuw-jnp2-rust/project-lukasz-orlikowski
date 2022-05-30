@@ -3,62 +3,13 @@ use gloo_storage::{Storage, LocalStorage};
 use wasm_bindgen::prelude::wasm_bindgen;
 use yew::{Component, Context, Html, html, MouseEvent, function_component, Properties};
 
-use crate::{utils::{getValue, map_token}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task}, Route, types::{List, Task}};
+use crate::{utils::{getValue, map_token, setValue, openModal, getParameter, hideModal}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task}, Route, types::{List, Task}};
 use yew_router::prelude::*;
 use super::navbar::Navbar;
 
 
 
-#[wasm_bindgen(
-    inline_js = "export function getParameter(input) { 
-        var url_string = window.location.href;
-        var url = new URL(url_string);
-        var par = url.searchParams.get(input);
-        return par;
-     }"
-)]
 
-extern "C" {
-    pub fn getParameter(input: &str) -> String;
-}
-
-#[wasm_bindgen(
-    inline_js = "export function openModal(input) { 
-        var modal = document.getElementById(input);
-        modal.style.display = \"block\";
-        return true;
-     }"
-)]
-
-extern "C" {
-    pub fn openModal(input: &str) -> bool;
-}
-
-#[wasm_bindgen(
-    inline_js = "export function hideModal(input) { 
-        var modal = document.getElementById(input);
-        modal.style.display = \"none\";
-        return true;
-     }"
-)]
-
-
-
-extern "C" {
-    pub fn hideModal(input: &str) -> bool;
-}
-
-#[wasm_bindgen(
-    inline_js = "export function setValue(input, value) { 
-        var el = document.getElementById(input);
-        el.value = value;
-        return true;
-     }"
-)]
-
-extern "C" {
-    pub fn setValue(input: &str, value: &str) -> bool;
-}
 
 #[function_component(ListOptions)]
 fn list_options(List {id, name, board, board_type}: &List) -> Html {

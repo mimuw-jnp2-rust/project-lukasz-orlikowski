@@ -50,3 +50,8 @@ pub struct TeamData {
    pub name: String,
    pub members: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct BoardUpdate {
+    pub name: String
+}

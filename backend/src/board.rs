@@ -5,6 +5,7 @@ use diesel::prelude::*;
 use diesel::SqliteConnection;
 use crate::schema::private_board;
 use crate::schema::team_board;
+use crate::types::BoardUpdate;
 use rocket::serde::{Deserialize, Serialize};
 use crate::db::Connection;
 
@@ -38,6 +39,14 @@ impl PrivateBoard {
             diesel::delete(private_board::table.filter(private_board::id.eq(id))).execute(conn)
         }).await
     }
+
+    pub async fn update(board: BoardUpdate, id: i32, connection: &Connection) -> QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::update(private_board::table.filter(private_board::id.eq(id)))
+                .set(private_board::name.eq(board.name))
+                .execute(conn)
+           }).await
+    }
 }
 
 impl TeamBoard {
@@ -54,5 +63,13 @@ impl TeamBoard {
         connection.run(move |conn| {
             diesel::delete(team_board::table.filter(team_board::id.eq(id))).execute(conn)
         }).await
+    }
+
+    pub async fn update(board: BoardUpdate, id: i32, connection: &Connection) -> QueryResult<usize> {
+        connection.run(move |conn| {
+            diesel::update(team_board::table.filter(team_board::id.eq(id)))
+                .set(team_board::name.eq(board.name))
+                .execute(conn)
+           }).await
     }
 }

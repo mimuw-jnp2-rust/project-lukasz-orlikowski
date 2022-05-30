@@ -1,7 +1,7 @@
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{Component, Context, Html, html, MouseEvent, function_component};
-use crate::{types::{PrivateBoard, TeamBoard}, api::{get_private_boards, get_team_boards, delete_private, delete_team_board}, utils::map_token};
+use crate::{types::{PrivateBoard, TeamBoard}, api::{get_private_boards, get_team_boards, delete_private, delete_team_board, update_board}, utils::{map_token, setValue, hideModal, getValue, openModal, reload}};
 use yew_router::prelude::*;
 use super::navbar::{Navbar};
 use crate::Route;
@@ -13,7 +13,8 @@ pub struct TeamDetails {
 
 pub enum MsgBoard {
     Delete,
-    Return
+    Return,
+    Update
 }
 
 impl Component for TeamDetails {
@@ -37,7 +38,17 @@ impl Component for TeamDetails {
             });
             false
             }
-        _ => {true}
+        Self::Message::Update => {
+            let name = ctx.props().name.as_str();
+            let id = ctx.props().id.clone().unwrap();
+            setValue("nameBoard", name);
+            setValue("idBoard", id.to_string().as_str());
+            setValue("typeBoard", "team");
+            false
+        }
+        _ => {
+            let _ = reload();
+            true}
         }
     }
 
@@ -49,7 +60,8 @@ impl Component for TeamDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{&ctx.props().team_name}</h6>
                     <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
-                </div>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>    
+            </div>
             </div>
         }
     }
@@ -82,17 +94,29 @@ impl Component for PrivateDetails {
             });
             false
             }
-        _ => {true}
+        Self::Message::Update => {
+            let name = ctx.props().name.as_str();
+            let id = ctx.props().id.unwrap();
+            setValue("nameBoard", name);
+            setValue("idBoard", id.to_string().as_str());
+            setValue("typeBoard", "private");
+            false
+        }
+        _ => {
+            let _ = reload();
+            true}
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let id = ctx.props().id.unwrap();
         html! {
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
                     <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
                 </div>
             </div>
         }
@@ -108,6 +132,8 @@ pub struct Main {
 pub enum Msg{
     Private(Result<Vec<PrivateBoard>, Error>),
     Team(Result<Vec<TeamBoard>, Error>),
+    UpdateBoard,
+    Return
 }
 
 
@@ -141,6 +167,20 @@ impl Component for Main {
                     return false;
                 }
                 self.team_boards = Some(boards.unwrap());
+            }
+            Self::Message::UpdateBoard => {
+                let id = getValue("idBoard").parse::<i32>().unwrap();
+                let name = getValue("nameBoard");
+                let token = self.token.clone().unwrap();
+                let board_type = getValue("typeBoard");
+                ctx.link().send_future(async move {
+                    let _ = update_board(&token, id, name, &board_type).await;
+                    Self::Message::Return
+                });
+            }
+            Self::Message::Return => {
+                self.private_boards = None;
+                self.team_boards = None;
             }
         }
         true
@@ -182,6 +222,26 @@ impl Component for Main {
             {for privates}
             <h1>{"Team boards"}</h1>
             {for teams}
+            <div id="myModal" class="modal">
+
+            <div class="modal-content">
+                <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
+                <form>
+                <div class="form-group">
+                    <label for="name">{"name"}</label>
+                    <input type="text" class="form-control" id="nameBoard" aria-describedby="usernameHelp" placeholder="Enter new board name"/>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" class="form-control" id="idBoard" aria-describedby="usernameHelp" placeholder="Enter place"/>
+                </div>
+                <div class="form-group">
+                    <input type="hidden" class="form-control" id="typeBoard" aria-describedby="usernameHelp" placeholder="Enter assigned people"/>
+                </div>
+                <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::UpdateBoard})}>{"Submit"}</button>
+            </form>
+            </div>
+
+            </div>
             </>
         }
     }

@@ -52,6 +52,11 @@ pub struct PrivateBoard {
     pub owner: i32
 }
 
+#[derive(Serialize, Deserialize,Debug, Clone, PartialEq, Properties)]
+pub struct BoardUpdate {
+    pub name: String
+}
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
 pub struct List {

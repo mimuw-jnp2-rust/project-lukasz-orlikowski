@@ -4,7 +4,7 @@ use types::{Credentials, TokenResponse };
 use db::Connection;
 use rocket::serde::json::Json;
 use crate::auth::ApiKey;
-use crate::types::{PrivateBoardData, TeamData, TeamBoardData, TeamBoardWithName};
+use crate::types::{PrivateBoardData, TeamData, TeamBoardData, TeamBoardWithName, BoardUpdate};
 use board::{PrivateBoard, TeamBoard};
 use team::Team;
 use list::List;
@@ -212,6 +212,22 @@ async fn update_task(data: Json<Task>, connection: Connection, ket: ApiKey) -> R
         _ => Err(Status::NotFound)
     }
 }
+
+#[post("/private/update/<id>", data="<data>")]
+async fn update_private(data: Json<BoardUpdate>, id: i32, connection: Connection, ket: ApiKey) -> Result<Json<bool>, Status> {
+    match PrivateBoard::update(data.into_inner(), id, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[post("/team/update/<id>", data="<data>")]
+async fn update_team(data: Json<BoardUpdate>, id: i32, connection: Connection, ket: ApiKey) -> Result<Json<bool>, Status> {
+    match TeamBoard::update(data.into_inner(), id, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
 //#[get("/sensitive")]
 //fn sensitive(key: ApiKey) -> String {
 //    format!("Hello, you have been identified as {}", key.0)
@@ -244,7 +260,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     .to_cors()?;
 
     rocket::build()
-        .mount("/", routes![update_task, get_tasks, delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
+        .mount("/", routes![update_team, update_private, update_task, get_tasks, delete_task, delete_team_board, login, register, private_board, team_create, team_board, owned, get_private_boards, get_team_boards, delete_private, new_list, get_list, create_task, get_task])
         .attach(cors).attach(Connection::fairing()).attach(AdHoc::on_ignite("Run Migrations", run_migrations))
         .launch()
         .await?;
