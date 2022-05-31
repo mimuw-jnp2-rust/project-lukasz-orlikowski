@@ -36,3 +36,30 @@ Celem zadania byłoby stworzenie aplikacji WWW służącej optymalizacji, zarzą
 - Rocket (api)
 - yew (frontend)
 - Diesel (ORM do łączenia się z bazą danych (postgres) https://diesel.rs/)
+
+## Co udało się zrobić w pierwszej części?
+
+Udało się zrealizować tworzenie/modyfikacja/usuwanie tablic prywatnych i zespołowych, tworzenie zespołu, tworzenie/modyfikacja/usuwanie list na tablicy, tworzenie/usuwanie/modyfikacja zadań, ustawianie deadlinu, przenoszenie pomiędzy listami oraz dodatkowe dane zadań jak w opisie.
+
+Niestety nie w pełni działa autoryzacja użytkownika na endpointach (JWT jest wymagany ale nie jest sprawdzany). Nie udało mi się tego zrealizować, ponieważ długo zajęła mi nauka pisania w yew (frontend - dziwnie się pisze nie w javascripcie, przynajmniej dla mnie niektóre rzeczy były nieintuicyjne + dość słaba dokumentacja jest dostępna).
+
+Aplikacja jest podzielona zgrubsza na dwie aplikacje frontend i backend. W backendzie mamy migracje napisane w sql oraz katalog src wystawiający api w pliku main. Pozostałe pliki to w większości pliki odpowiedzialne za komunikację z bazą danych. W frontendzie mamy plik to komunikacji z api (api.rs) utils, types oraz folder components z komponentami.
+
+cargo clippy odpalony na częsci backendowej daje trochę warningów. Nie udało mi się ich wyciszyć/rozwiązać a jeżeli dobrze rozumiem pochodzą z #Insertable, #AsChangeSet, więc z kodu niezależnego ode mnie.
+
+Aby odpalić backend
+```
+rustup default nightly
+cargo run
+```
+
+Aby odpalić frontend
+```
+rustup target add wasm32-unknown-unknown
+
+cargo install --locked trunk
+
+trunk serve
+```
+
+W przyszłej wersji chciałbym dodać dockera.
