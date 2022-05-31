@@ -42,7 +42,7 @@ impl Team {
             })
             .await;
 
-        let team_id = Team::get_name_id(copied_name, connection).await;
+        let team_id = Team::get_name_id(copied_name, owner, connection).await;
 
         for member in members {
             Team::add(team_id, member, connection).await;
@@ -51,11 +51,12 @@ impl Team {
         rows_affected
     }
 
-    pub async fn get_name_id(name: String, connection: &Connection) -> Option<i32> {
+    pub async fn get_name_id(name: String, owner: i32, connection: &Connection) -> Option<i32> {
         connection
-            .run(|conn| {
+            .run(move |conn| {
                 let res: Result<Team, Error> = team::table
                     .filter(team::name.eq(name))
+                    .filter(team::owner.eq(owner))
                     .order(team::id)
                     .first(conn);
                 match res {

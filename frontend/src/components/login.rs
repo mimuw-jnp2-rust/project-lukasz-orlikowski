@@ -55,9 +55,8 @@ impl Component for LoginForm {
                 <div>
                 <form>
                     <div class="form-group">
-                        <label for="exampleInputEmail1">{"Email address"}</label>
-                        <input type="email" class="form-control" id="loginName" aria-describedby="emailHelp" placeholder="Enter email"/>
-                        <small id="emailHelp" class="form-text text-muted">{"We'll never share your email with anyone else."}</small>
+                        <label for="exampleInputEmail1">{"Username"}</label>
+                        <input type="text" class="form-control" id="loginName" aria-describedby="emailHelp" placeholder="Enter username"/>
                     </div>
                     <div class="form-group">
                         <label for="exampleInputPassword1">{"Password"}</label>
