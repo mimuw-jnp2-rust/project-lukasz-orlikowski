@@ -1,9 +1,14 @@
+use components::board::Board;
+use components::login::LoginForm;
+use components::main_page::Main;
+use components::private_board_create::PrivateBoardCreate;
+use components::register::RegisterForm;
+use components::team_board_create::TeamBoardCreate;
+use components::team_create::TeamCreate;
 use yew::prelude::*;
-use components::login::{LoginForm};
-use components::register::{RegisterForm};
 
-mod components;
 mod api;
+mod components;
 mod types;
 mod utils;
 
@@ -15,6 +20,16 @@ enum Route {
     Login,
     #[at("/register")]
     Register,
+    #[at("/index")]
+    Main,
+    #[at("private/create")]
+    PrivateBoardCreate,
+    #[at("team/create")]
+    TeamCreate,
+    #[at("team_board/create")]
+    TeamBoardCreate,
+    #[at("board")]
+    Board,
 }
 
 #[function_component(App)]
@@ -29,7 +44,12 @@ fn app() -> Html {
 fn switch(routes: &Route) -> Html {
     match routes {
         Route::Login => html! { <LoginForm /> },
-        Route::Register => html! { <RegisterForm /> }
+        Route::Register => html! { <RegisterForm /> },
+        Route::Main => html! {<Main />},
+        Route::PrivateBoardCreate => html! {<PrivateBoardCreate />},
+        Route::TeamCreate => html! {<TeamCreate />},
+        Route::TeamBoardCreate => html!(<TeamBoardCreate />),
+        Route::Board => html!(<Board />),
     }
 }
 

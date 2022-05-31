@@ -1,17 +1,15 @@
-use yew::{html, Component, Context, Html, MouseEvent};
-use gloo_storage::{LocalStorage, Storage};
-use crate::Route;
-use crate::api::{login};
-use crate::types::{LoginResponse};
+use crate::api::login;
+use crate::types::LoginResponse;
 use crate::utils::{getValue, Msg};
+use crate::Route;
+use gloo_storage::{LocalStorage, Storage};
+use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
-
 
 pub struct LoginForm {
     error: bool,
-    login: bool
+    login: bool,
 }
-
 
 impl Component for LoginForm {
     type Message = Msg<LoginResponse>;
@@ -20,7 +18,7 @@ impl Component for LoginForm {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             error: false,
-            login: false
+            login: false,
         }
     }
 
@@ -47,17 +45,18 @@ impl Component for LoginForm {
             }
         }
     }
-    
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.login {
+            return html! {<Redirect<Route> to={Route::Main}/>};
+        }
         html! {
             <div class="d-flex justify-content-md-center align-items-center vh-100">
                 <div>
                 <form>
                     <div class="form-group">
-                        <label for="exampleInputEmail1">{"Email address"}</label>
-                        <input type="email" class="form-control" id="loginName" aria-describedby="emailHelp" placeholder="Enter email"/>
-                        <small id="emailHelp" class="form-text text-muted">{"We'll never share your email with anyone else."}</small>
+                        <label for="exampleInputEmail1">{"Username"}</label>
+                        <input type="text" class="form-control" id="loginName" aria-describedby="emailHelp" placeholder="Enter username"/>
                     </div>
                     <div class="form-group">
                         <label for="exampleInputPassword1">{"Password"}</label>
