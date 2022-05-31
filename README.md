@@ -62,4 +62,9 @@ cargo install --locked trunk
 trunk serve
 ```
 
-W przyszłej wersji chciałbym dodać dockera.
+Na branchu docker jest możliwość odpalenia dockera komendami:
+```
+docker-compose build
+docker-compose up
+```
+Stworzy on oba serwery (frontend i backend). Powinien działać dobrze, ale testowałem głównie bez dockera, więc w razie problemów z dockerem należy skorzystać z wersji bez docker na branchu main.
