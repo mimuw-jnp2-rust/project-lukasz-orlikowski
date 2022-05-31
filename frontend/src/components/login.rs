@@ -1,17 +1,15 @@
-use yew::{html, Component, Context, Html, MouseEvent};
-use gloo_storage::{LocalStorage, Storage};
-use crate::Route;
-use crate::api::{login};
-use crate::types::{LoginResponse};
+use crate::api::login;
+use crate::types::LoginResponse;
 use crate::utils::{getValue, Msg};
+use crate::Route;
+use gloo_storage::{LocalStorage, Storage};
+use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
-
 
 pub struct LoginForm {
     error: bool,
-    login: bool
+    login: bool,
 }
-
 
 impl Component for LoginForm {
     type Message = Msg<LoginResponse>;
@@ -20,7 +18,7 @@ impl Component for LoginForm {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             error: false,
-            login: false
+            login: false,
         }
     }
 
@@ -47,11 +45,10 @@ impl Component for LoginForm {
             }
         }
     }
-    
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.login {
-            return html! {<Redirect<Route> to={Route::Main}/>}
+            return html! {<Redirect<Route> to={Route::Main}/>};
         }
         html! {
             <div class="d-flex justify-content-md-center align-items-center vh-100">

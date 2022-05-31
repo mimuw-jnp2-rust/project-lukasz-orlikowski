@@ -1,13 +1,16 @@
-use yew::{Component, Context, Html, html, MouseEvent};
+use yew::{html, Component, Context, Html, MouseEvent};
 
-use crate::{utils::{Msg, getValue}, api::register, Route};
+use crate::{
+    api::register,
+    utils::{getValue, Msg},
+    Route,
+};
 use yew_router::prelude::*;
 
 pub struct RegisterForm {
     error: bool,
-    success: bool
+    success: bool,
 }
-
 
 impl Component for RegisterForm {
     type Message = Msg<bool>;
@@ -16,7 +19,7 @@ impl Component for RegisterForm {
     fn create(_ctx: &Context<Self>) -> Self {
         Self {
             error: false,
-            success: false
+            success: false,
         }
     }
 

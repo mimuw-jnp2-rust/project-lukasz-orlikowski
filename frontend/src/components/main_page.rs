@@ -1,20 +1,23 @@
+use super::navbar::Navbar;
+use crate::Route;
+use crate::{
+    api::{delete_private, delete_team_board, get_private_boards, get_team_boards, update_board},
+    types::{PrivateBoard, TeamBoard},
+    utils::{getValue, hideModal, map_token, openModal, reload, setValue},
+};
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
-use yew::{Component, Context, Html, html, MouseEvent, function_component};
-use crate::{types::{PrivateBoard, TeamBoard}, api::{get_private_boards, get_team_boards, delete_private, delete_team_board, update_board}, utils::{map_token, setValue, hideModal, getValue, openModal, reload}};
+use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
-use super::navbar::{Navbar};
-use crate::Route;
-
 
 pub struct TeamDetails {
-    pub token: String
+    pub token: String,
 }
 
 pub enum MsgBoard {
     Delete,
     Return,
-    Update
+    Update,
 }
 
 impl Component for TeamDetails {
@@ -29,26 +32,27 @@ impl Component for TeamDetails {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-        Self::Message::Delete => {
-            let token = self.token.clone();
-            let id = ctx.props().id;
-            ctx.link().send_future(async move {
-                delete_team_board(&token, id.unwrap()).await;
-                Self::Message::Return
-            });
-            false
+            Self::Message::Delete => {
+                let token = self.token.clone();
+                let id = ctx.props().id;
+                ctx.link().send_future(async move {
+                    let _ = delete_team_board(&token, id.unwrap()).await;
+                    Self::Message::Return
+                });
+                false
             }
-        Self::Message::Update => {
-            let name = ctx.props().name.as_str();
-            let id = ctx.props().id.clone().unwrap();
-            setValue("nameBoard", name);
-            setValue("idBoard", id.to_string().as_str());
-            setValue("typeBoard", "team");
-            false
-        }
-        _ => {
-            let _ = reload();
-            true}
+            Self::Message::Update => {
+                let name = ctx.props().name.as_str();
+                let id = ctx.props().id.unwrap();
+                setValue("nameBoard", name);
+                setValue("idBoard", id.to_string().as_str());
+                setValue("typeBoard", "team");
+                false
+            }
+            _ => {
+                let _ = reload();
+                true
+            }
         }
     }
 
@@ -59,18 +63,16 @@ impl Component for TeamDetails {
                     <h5 class="card-title">{&ctx.props().name}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{&ctx.props().team_name}</h6>
                     <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
-                    <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>    
+                    <button class="btn btn-danger" onclick={ctx.link().callback(|_: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
             </div>
             </div>
         }
     }
 }
 
-
-
 pub struct PrivateDetails {
-    pub token: String
+    pub token: String,
 }
 
 impl Component for PrivateDetails {
@@ -85,38 +87,38 @@ impl Component for PrivateDetails {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-        Self::Message::Delete => {
-            let token = self.token.clone();
-            let id = ctx.props().id;
-            ctx.link().send_future(async move {
-                delete_private(&token, id.unwrap()).await;
-                Self::Message::Return
-            });
-            false
+            Self::Message::Delete => {
+                let token = self.token.clone();
+                let id = ctx.props().id;
+                ctx.link().send_future(async move {
+                    let _ = delete_private(&token, id.unwrap()).await;
+                    Self::Message::Return
+                });
+                false
             }
-        Self::Message::Update => {
-            let name = ctx.props().name.as_str();
-            let id = ctx.props().id.unwrap();
-            setValue("nameBoard", name);
-            setValue("idBoard", id.to_string().as_str());
-            setValue("typeBoard", "private");
-            false
-        }
-        _ => {
-            let _ = reload();
-            true}
+            Self::Message::Update => {
+                let name = ctx.props().name.as_str();
+                let id = ctx.props().id.unwrap();
+                setValue("nameBoard", name);
+                setValue("idBoard", id.to_string().as_str());
+                setValue("typeBoard", "private");
+                false
+            }
+            _ => {
+                let _ = reload();
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let id = ctx.props().id.unwrap();
         html! {
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
                     <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
-                    <button class="btn btn-danger" onclick={ctx.link().callback(|e: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(|_: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
                 </div>
             </div>
         }
@@ -126,16 +128,15 @@ impl Component for PrivateDetails {
 pub struct Main {
     private_boards: Option<Vec<PrivateBoard>>,
     team_boards: Option<Vec<TeamBoard>>,
-    token: Option<String>
+    token: Option<String>,
 }
 
-pub enum Msg{
+pub enum Msg {
     Private(Result<Vec<PrivateBoard>, Error>),
     Team(Result<Vec<TeamBoard>, Error>),
     UpdateBoard,
-    Return
+    Return,
 }
-
 
 impl Component for Main {
     type Message = Msg;
@@ -147,11 +148,14 @@ impl Component for Main {
             Ok(key) => Self {
                 private_boards: None,
                 team_boards: None,
-                token: Some(key)
+                token: Some(key),
             },
-            Err(_) => Self { private_boards: None, team_boards: None, token: None }
+            Err(_) => Self {
+                private_boards: None,
+                team_boards: None,
+                token: None,
+            },
         }
-
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -200,20 +204,22 @@ impl Component for Main {
         }
         if self.team_boards.is_none() {
             let token = self.token.clone().unwrap();
-            ctx.link().send_future(async move{
+            ctx.link().send_future(async move {
                 let boards = get_team_boards(&token).await;
                 Self::Message::Team(boards)
             });
             return html! {};
         }
         let privates = self.private_boards.clone();
-        let privates = privates.unwrap().into_iter().map(|private| html! {
-                        <PrivateDetails name={private.name.clone()} id={private.id.clone()} owner={private.owner.clone()} />
-                    });
-        
+        let privates = privates.unwrap().into_iter().map(|private| {
+            html! {
+                <PrivateDetails name={private.name.clone()} id={private.id} owner={private.owner} />
+            }
+        });
+
         let teams = self.team_boards.clone();
         let teams = teams.unwrap().into_iter().map(|team| html! {
-                        <TeamDetails team_name={team.team_name.clone()} id={team.id.clone()} name={team.name.clone()} owner={team.owner.clone()}/>
+                        <TeamDetails team_name={team.team_name} id={team.id} name={team.name.clone()} owner={team.owner}/>
                     });
         html! {
             <>
@@ -225,7 +231,7 @@ impl Component for Main {
             <div id="myModal" class="modal">
 
             <div class="modal-content">
-                <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
+                <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
                 <form>
                 <div class="form-group">
                     <label for="name">{"name"}</label>

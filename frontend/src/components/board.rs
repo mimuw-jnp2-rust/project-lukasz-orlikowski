@@ -1,18 +1,28 @@
 use gloo_net::Error;
-use gloo_storage::{Storage, LocalStorage};
-use wasm_bindgen::prelude::wasm_bindgen;
-use yew::{Component, Context, Html, html, MouseEvent, function_component, Properties};
+use gloo_storage::{LocalStorage, Storage};
+use yew::{function_component, html, Component, Context, Html, MouseEvent, Properties};
 
-use crate::{utils::{getValue, map_token, setValue, openModal, getParameter, hideModal, reload}, api::{register, get_lists, create_list, create_task, get_tasks, delete_task, update_task, get_task, delete_list}, Route, types::{List, Task}};
-use yew_router::prelude::*;
 use super::navbar::Navbar;
-
-
-
-
+use crate::{
+    api::{
+        create_list, create_task, delete_list, delete_task, get_lists, get_task, get_tasks,
+        update_task,
+    },
+    types::{List, Task},
+    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue},
+};
 
 #[function_component(ListOptions)]
-fn list_options(List {id, name, board, board_type}: &List) -> Html {
+fn list_options(
+    List {
+        id,
+        name,
+        board,
+        board_type,
+    }: &List,
+) -> Html {
+    let _ = board;
+    let _ = board_type; // For clippy
     html! {
         <option value={id.unwrap().to_string()}>{name}</option>
     }
@@ -20,13 +30,15 @@ fn list_options(List {id, name, board, board_type}: &List) -> Html {
 
 #[derive(PartialEq, Properties)]
 pub struct SubTasksProps {
-    pub subtasks: String
+    pub subtasks: String,
 }
 
 #[function_component(SubTasks)]
-fn sub_tasks(SubTasksProps {subtasks}: &SubTasksProps) -> Html {
-    let sub_tasks = subtasks.split(";").into_iter().map(|subtask| html! {
-        <h6 class="card-subtitle mb-2 text-muted">{"Subtask:"}{subtask}</h6>
+fn sub_tasks(SubTasksProps { subtasks }: &SubTasksProps) -> Html {
+    let sub_tasks = subtasks.split(';').into_iter().map(|subtask| {
+        html! {
+            <h6 class="card-subtitle mb-2 text-muted">{"Subtask:"}{subtask}</h6>
+        }
     });
     html! {
         <>
@@ -36,12 +48,10 @@ fn sub_tasks(SubTasksProps {subtasks}: &SubTasksProps) -> Html {
     }
 }
 
-
-
 struct ListDetails {
     tasks: Option<Vec<Task>>,
     token: Option<String>,
-    id: Option<i32>
+    id: Option<i32>,
 }
 
 pub enum MsgList {
@@ -49,7 +59,7 @@ pub enum MsgList {
     Delete(Option<i32>),
     Return,
     UpdateTask(Option<i32>),
-    DeleteList
+    DeleteList,
 }
 
 impl Component for ListDetails {
@@ -60,17 +70,20 @@ impl Component for ListDetails {
         Self {
             tasks: None,
             token: map_token(LocalStorage::get("Token")),
-            id: None
+            id: None,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Self::Message::Update(Ok(tasks)) => {self.tasks = Some(tasks); true}
+            Self::Message::Update(Ok(tasks)) => {
+                self.tasks = Some(tasks);
+                true
+            }
             Self::Message::Delete(id) => {
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
-                    delete_task(&token, id.unwrap()).await;
+                    let _ = delete_task(&token, id.unwrap()).await;
                     let _ = reload();
                     Self::Message::Return
                 });
@@ -87,7 +100,7 @@ impl Component for ListDetails {
                 false
             }
             Self::Message::UpdateTask(id) => {
-                self.id = id.clone();
+                self.id = id;
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
                     let task = get_task(&token, id.unwrap()).await;
@@ -101,33 +114,30 @@ impl Component for ListDetails {
 
                     if task.note.is_some() {
                         setValue("noteUpdate", task.note.unwrap().as_str());
-                    }
-                    else {
+                    } else {
                         setValue("noteUpdate", "");
                     }
 
                     if task.place.is_some() {
                         setValue("placeUpdate", task.place.unwrap().as_str());
-                    }
-                    else {
+                    } else {
                         setValue("placeUpdate", "");
                     }
 
                     if task.members.is_some() {
                         setValue("membersUpdate", task.members.unwrap().as_str());
-                    }
-                    else {
+                    } else {
                         setValue("membersUpdate", "");
                     }
 
                     setValue("deadlineUpdate", task.deadline.as_str());
 
                     setValue("listUpdate", task.list.to_string().as_str());
-                        Self::Message::Return
+                    Self::Message::Return
                 });
                 true
             }
-            _ => {true}
+            _ => true,
         }
     }
 
@@ -139,7 +149,7 @@ impl Component for ListDetails {
                 let tasks = get_tasks(&token, id).await;
                 Self::Message::Update(tasks)
             });
-            return html!{};
+            return html! {};
         }
         let tasks = self.tasks.clone();
         let tasks = tasks.unwrap().into_iter().map(|task| html! {
@@ -151,21 +161,21 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{task.members.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{task.deadline}</h6>
                     <SubTasks subtasks={task.subtasks.clone()}/>
-                    <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(move |e: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(move |_: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
                 </div>
             </div>
         });
 
         //let lists_options = ctx.props().lists.clone();
         //let lists_options = lists_options.unwrap().into_iter().map(|list| html! {
-          //                      <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
-            //                });
+        //                      <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
+        //                });
         html! {
             <>
                 <div class="col-xs-6" style="padding-left: 80px;">
                     <h2>{&ctx.props().name}</h2>
-                    <button class="btn btn-danger" onclick={ctx.link().callback(move |e: MouseEvent| {Self::Message::DeleteList})}>{"Delete list"}</button>
+                    <button class="btn btn-danger" onclick={ctx.link().callback(move |_: MouseEvent| {Self::Message::DeleteList})}>{"Delete list"}</button>
                     {for tasks}
                 </div>
                 <div class="col-xs-6 vl"></div>
@@ -178,7 +188,7 @@ impl Component for ListDetails {
 struct ListProp {
     pub name: String,
     pub id: i32,
-    lists: Option<Vec<List>>
+    lists: Option<Vec<List>>,
 }
 
 pub struct Board {
@@ -186,7 +196,7 @@ pub struct Board {
     board_id: i32,
     lists: Option<Vec<List>>,
     token: Option<String>,
-    error: bool
+    error: bool,
 }
 
 pub enum Msg {
@@ -194,10 +204,8 @@ pub enum Msg {
     Res(Result<bool, Error>),
     Update(Result<Vec<List>, Error>),
     UpdateTaskSubmit,
-    AddTask
+    AddTask,
 }
-
-
 
 impl Component for Board {
     type Message = Msg;
@@ -211,7 +219,7 @@ impl Component for Board {
             board_id,
             lists: None,
             token: map_token(LocalStorage::get("Token")),
-            error: false
+            error: false,
         }
     }
 
@@ -223,7 +231,16 @@ impl Component for Board {
                 let board_type = self.board_type.clone();
                 let token = self.token.clone().unwrap();
                 ctx.link().send_future(async move {
-                    let res = create_list(&token, List{id: None, name, board, board_type}).await;
+                    let res = create_list(
+                        &token,
+                        List {
+                            id: None,
+                            name,
+                            board,
+                            board_type,
+                        },
+                    )
+                    .await;
                     Self::Message::Res(res)
                 });
                 false
@@ -246,8 +263,21 @@ impl Component for Board {
                 let deadline = getValue("deadline");
                 let subtasks = getValue("subtasks");
                 ctx.link().send_future(async move {
-                    let res = create_task(&token, Task{subtasks, deadline, id: None, name, note: Some(note), place: Some(place), members: Some(members), list}).await;
-                    Self::Message::Res(res) 
+                    let res = create_task(
+                        &token,
+                        Task {
+                            subtasks,
+                            deadline,
+                            id: None,
+                            name,
+                            note: Some(note),
+                            place: Some(place),
+                            members: Some(members),
+                            list,
+                        },
+                    )
+                    .await;
+                    Self::Message::Res(res)
                 });
                 false
             }
@@ -262,7 +292,20 @@ impl Component for Board {
                 let deadline = getValue("deadlineUpdate");
                 let subtasks = getValue("subtasksUpdate");
                 ctx.link().send_future(async move {
-                    let res = update_task(&token, Task{subtasks, id: Some(id), name, note: Some(note), place: Some(place), members: Some(members), list, deadline}).await;
+                    let res = update_task(
+                        &token,
+                        Task {
+                            subtasks,
+                            id: Some(id),
+                            name,
+                            note: Some(note),
+                            place: Some(place),
+                            members: Some(members),
+                            list,
+                            deadline,
+                        },
+                    )
+                    .await;
                     Self::Message::Res(res)
                 });
                 false
@@ -276,26 +319,28 @@ impl Component for Board {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.token.is_none() {
-            return html!{};
+            return html! {};
         }
         if self.lists.is_none() {
             let token = self.token.clone().unwrap();
-            let board_id = self.board_id.clone();
+            let board_id = self.board_id;
             let board_type = self.board_type.clone();
             ctx.link().send_future(async move {
                 let lists = get_lists(board_id, board_type, &token).await;
                 Self::Message::Update(lists)
             });
-            return html!{}
+            return html! {};
         }
         let lists = self.lists.clone();
         let lists_clone = lists.clone();
-        let lists = lists.unwrap().into_iter().map(|list| html! {
-                        <ListDetails name={list.name.clone()} id ={list.id.unwrap()} lists={lists_clone.clone()}/>
-                    });
+        let lists = lists.unwrap().into_iter().map(|list| {
+            html! {
+                <ListDetails name={list.name} id ={list.id.unwrap()} lists={lists_clone.clone()}/>
+            }
+        });
         let lists_options = self.lists.clone();
         let lists_options = lists_options.unwrap().into_iter().map(|list| html! {
-                                <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
+                                <ListOptions name={list.name} board={list.board} board_type={list.board_type} id={list.id} />
                             });
         let lists_options_copy = lists_options.clone();
         html! {
@@ -316,12 +361,12 @@ impl Component for Board {
                     }
                 </div>
                 <div class="col-xs-6" style="padding-left: 80px;">
-                    <button class="btn btn-primary" id="myBtn" onclick={|e: MouseEvent| {openModal("myModal");}} >{"Add task"}</button>
+                    <button class="btn btn-primary" id="myBtn" onclick={|_: MouseEvent| {openModal("myModal");}} >{"Add task"}</button>
 
                     <div id="myModal" class="modal">
 
                     <div class="modal-content">
-                        <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
+                        <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
                         <form>
                         <div class="form-group">
                             <label for="name">{"name"}</label>
@@ -364,7 +409,7 @@ impl Component for Board {
                 <div id="taskUpdate" class="modal">
 
                 <div class="modal-content">
-                    <span class="close btn btn-danger" onclick={|e: MouseEvent| {hideModal("taskUpdate");}}>{"Hide"}</span>
+                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("taskUpdate");}}>{"Hide"}</span>
                     <form>
                     <div class="form-group">
                         <label for="name">{"name"}</label>
