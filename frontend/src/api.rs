@@ -3,7 +3,7 @@ use gloo_net::Error;
 
 use crate::types::{
     BoardUpdate, List, Login, LoginResponse, PrivateBoard, PrivateBoardData, Task, Team, TeamBoard,
-    TeamBoardData, TeamData,
+    TeamBoardData, TeamData, Timer, TimerData,
 };
 
 static BACKEND: &str = "http://localhost:8000/";
@@ -220,6 +220,45 @@ pub async fn delete_task(token: &str, id: i32) -> Result<bool, Error> {
     let url = format!("{}{}{}", BACKEND, "task/delete/", id);
     Request::get(url.as_str())
         .header("Authorization", token)
+        .send()
+        .await?
+        .json()
+        .await
+}
+
+pub async fn get_timers(token: &str) -> Result<Vec<Timer>, Error> {
+    let url = format!("{}timers/get", BACKEND);
+    Request::get(url.as_str()).header("Authorization", token)
+    .send()
+    .await?
+    .json()
+    .await
+}
+
+pub async fn update_timer(token: &str, id: i32) -> Result<bool, Error> {
+    let url = format!("{}timer/update/{}", BACKEND, id);
+    Request::get(url.as_str()).header("Authorization", token)
+    .send()
+    .await?
+    .json()
+    .await
+}
+
+pub async fn delete_timer(token: &str, id: i32) -> Result<bool, Error> {
+    let url = format!("{}timer/delete/{}", BACKEND, id);
+    Request::get(url.as_str()).header("Authorization", token)
+    .send()
+    .await?
+    .json()
+    .await
+}
+
+pub async fn create_timer(token: &str, name: &str) -> Result<bool, Error> {
+    let timer = TimerData {name: name.to_owned()};
+    let url = format!("{}{}", BACKEND, "timer/create");
+    Request::post(url.as_str())
+        .header("Authorization", token)
+        .json(&timer)?
         .send()
         .await?
         .json()

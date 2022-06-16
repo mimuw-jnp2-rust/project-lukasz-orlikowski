@@ -1,4 +1,7 @@
+
+
 use serde::{Deserialize, Serialize};
+use wasm_timer::{SystemTime, UNIX_EPOCH};
 use yew::Properties;
 
 #[derive(Clone, PartialEq, Deserialize, Debug)]
@@ -75,4 +78,34 @@ pub struct Task {
     pub members: Option<String>,
     pub deadline: String,
     pub subtasks: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Timer {
+    pub id: i32,
+    pub name: String,
+    pub user_id: i32,
+    pub status: String,
+    pub time: u64,
+    pub start: Option<u64>
+}
+
+impl Timer {
+    pub fn get_time(&self) -> u64 {
+        if self.status == "active" {
+            let time = SystemTime::now();
+            let since_the_epoch = time
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards");
+            since_the_epoch.as_secs() + self.time  - self.start.unwrap() as u64
+        }
+        else {
+            self.time
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct TimerData {
+    pub name: String
 }

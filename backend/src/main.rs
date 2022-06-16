@@ -7,13 +7,16 @@ use rocket::futures::future::join_all;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use team::Team;
-use types::{Credentials, TokenResponse};
+use timer::Timer;
+use types::{Credentials, TokenResponse, TimerData};
+use utils::get_time;
 
 use self::auth::crypto::sha2::Sha256;
 use self::auth::jwt::{Header, Registered, Token};
 use task::Task;
 use user::User;
 
+pub mod utils;
 pub mod auth;
 pub mod board;
 pub mod db;
@@ -23,6 +26,7 @@ pub mod task;
 pub mod team;
 pub mod types;
 pub mod user;
+pub mod timer;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
@@ -323,6 +327,53 @@ async fn delete_list(id: i32, connection: Connection, _ket: ApiKey) -> Result<Js
     }
 }
 
+#[post("/timer/create", data = "<data>")]
+async fn timer_create(data: Json<TimerData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    if user_id.is_none() {
+        return Err(Status::NotFound);
+    }
+    let name = data.into_inner().name;
+    let time = get_time();
+    let timer = Timer { id: None, name, user_id: user_id.unwrap(), status: "active".to_owned(), time: 0, start: Some(time)};
+    match Timer::create(timer, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        Err(x) => {println!("{:?}", x); Err(Status::NotFound)}
+    }
+}
+
+#[get("/timer/delete/<id>")]
+async fn timer_delete(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match Timer::delete(id, &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/timer/update/<id>")]
+async fn timer_update(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    let timer = Timer::get_by_id(id, &connection).await;
+    if timer.is_err() {
+        return Err(Status::NotFound);
+    }
+    match Timer::update(timer.unwrap(), &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[get("/timers/get")]
+async fn get_timers(connection: Connection, key: ApiKey) -> Result<Json<Vec<Timer>>, Status> {
+    let user_id = User::get_username_id(key.0, &connection).await;
+    if user_id.is_none() {
+        return Err(Status::NotFound);
+    }
+    match Timer::get_timers(user_id.unwrap(), &connection).await {
+        Ok(timers) => Ok(Json(timers)),
+        _ => Err(Status::NotFound)
+    }
+}
+
 async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
     embed_migrations!();
 
@@ -373,7 +424,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 new_list,
                 get_list,
                 create_task,
-                get_task
+                get_task,
+                timer_create,
+                timer_delete,
+                timer_update,
+                get_timers
             ],
         )
         .attach(cors)

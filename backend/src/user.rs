@@ -54,7 +54,6 @@ impl User {
                     .first(conn);
                 match res {
                     Ok(user) => {
-                        println!("{:?}", user);
                         Some(user)
                     }
                     Err(_) => None,

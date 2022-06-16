@@ -59,3 +59,14 @@ table! {
         subtasks -> Varchar,
     }
 }
+
+table! {
+    timer(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        user_id -> Integer,
+        status -> Varchar,
+        time -> Integer,
+        start -> Nullable<Integer>,
+    }
+}

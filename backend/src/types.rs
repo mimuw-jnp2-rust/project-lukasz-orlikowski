@@ -63,3 +63,9 @@ pub struct TeamData {
 pub struct BoardUpdate {
     pub name: String,
 }
+
+
+#[derive(Deserialize)]
+pub struct TimerData {
+    pub name: String
+}
