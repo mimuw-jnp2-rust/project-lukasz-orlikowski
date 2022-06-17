@@ -8,7 +8,7 @@ use rocket::http::Status;
 use rocket::serde::json::Json;
 use team::Team;
 use timer::Timer;
-use types::{Credentials, TokenResponse, TimerData};
+use types::{Credentials, TokenResponse, TimerData, TaskFilter};
 use utils::get_time;
 
 use self::auth::crypto::sha2::Sha256;
@@ -223,6 +223,19 @@ async fn get_tasks(
     }
 }
 
+#[post("/task/get/<id>", data="<data>")]
+async fn filter_tasks(
+    id: i32,
+    data: Json<TaskFilter>,
+    connection: Connection,
+    _key: ApiKey,
+) -> Result<Json<Vec<Task>>, Status> {
+    match Task::filter(id, data.into_inner(), &connection).await {
+        Ok(tasks) => Ok(Json(tasks)),
+        _ => Err(Status::NotFound),
+    }
+}
+
 #[get("/task/<id>")]
 async fn get_task(id: i32, connection: Connection, _key: ApiKey) -> Result<Json<Task>, Status> {
     match Task::get_single(id, &connection).await {
@@ -410,6 +423,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 update_private,
                 update_task,
                 get_tasks,
+                filter_tasks,
                 delete_task,
                 delete_team_board,
                 login,

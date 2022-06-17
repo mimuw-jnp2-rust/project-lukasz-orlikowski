@@ -69,3 +69,15 @@ pub struct BoardUpdate {
 pub struct TimerData {
     pub name: String
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct TaskFilter {
+    pub name: String,
+    pub place: String,
+    pub members: String,
+    pub deadline_start: String,
+    pub deadline_end: String,
+    pub points_min: Option<i32>,
+    pub points_max: Option<i32>,
+    pub tags: String
+}

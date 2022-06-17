@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 use yew::Properties;
 
+use crate::utils::setValue;
+
 #[derive(Clone, PartialEq, Deserialize, Debug)]
 pub struct LoginResponse {
     success: bool,
@@ -78,6 +80,43 @@ pub struct Task {
     pub members: Option<String>,
     pub deadline: String,
     pub subtasks: String,
+    pub points: i32,
+    pub tags: String
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct TaskFilter {
+    pub name: String,
+    pub place: String,
+    pub members: String,
+    pub deadline_start: String,
+    pub deadline_end: String,
+    pub points_min: Option<i32>,
+    pub points_max: Option<i32>,
+    pub tags: String
+}
+
+impl TaskFilter {
+    pub fn set_filters(&self) {
+        setValue("nameTaskFilter", self.name.clone().as_str());
+        setValue("placeFilter", self.place.clone().as_str());
+        setValue("membersFilter", self.members.clone().as_str());
+        setValue("deadlineStart", self.deadline_start.clone().as_str());
+        setValue("deadlineEnd", self.deadline_end.clone().as_str());
+        if self.points_min.is_some() {
+            setValue("pointsMin", self.points_min.unwrap().to_string().as_str());
+        }
+        else {
+            setValue("pointsMin", "");
+        }
+        if self.points_max.is_some() {
+            setValue("pointsMin", self.points_max.unwrap().to_string().as_str());
+        }
+        else {
+            setValue("pointsMin", "");
+        }
+        setValue("tagsFilter", self.tags.clone().as_str());
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -1,3 +1,5 @@
+use std::{string::ParseError, num::ParseIntError};
+
 use gloo_net::Error;
 use gloo_storage::errors::StorageError;
 use wasm_bindgen::prelude::*;
@@ -18,6 +20,13 @@ pub fn map_token(token: Result<String, StorageError>) -> Option<String> {
     match token {
         Ok(key) => Some(key),
         Err(_) => None,
+    }
+}
+
+pub fn map_result(result: Result<i32, ParseIntError>) -> Option<i32> {
+    match result {
+        Ok(res) => Some(res),
+        Err(_) => None
     }
 }
 

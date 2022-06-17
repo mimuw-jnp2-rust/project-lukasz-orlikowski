@@ -57,6 +57,8 @@ table! {
         members -> Nullable<Varchar>,
         deadline -> Varchar,
         subtasks -> Varchar,
+        points -> Integer,
+        tags -> Varchar,
     }
 }
 

@@ -8,8 +8,8 @@ use crate::{
         create_list, create_task, delete_list, delete_task, get_lists, get_task, get_tasks,
         update_task,
     },
-    types::{List, Task},
-    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue},
+    types::{List, Task, TaskFilter},
+    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue, map_result},
 };
 
 #[function_component(ListOptions)]
@@ -111,6 +111,8 @@ impl Component for ListDetails {
 
                     setValue("idUpdate", id.unwrap().to_string().as_str());
                     setValue("nameUpdateTask", task.name.as_str());
+                    setValue("pointsUpdate", task.points.to_string().as_str());
+                    setValue("tagsUpdate", task.tags.as_str());
 
                     if task.note.is_some() {
                         setValue("noteUpdate", task.note.unwrap().as_str());
@@ -145,8 +147,9 @@ impl Component for ListDetails {
         if self.tasks.is_none() {
             let token = self.token.clone().unwrap();
             let id = ctx.props().id;
+            let filter = ctx.props().filter.clone();
             ctx.link().send_future(async move {
-                let tasks = get_tasks(&token, id).await;
+                let tasks = get_tasks(&token, id, filter).await;
                 Self::Message::Update(tasks)
             });
             return html! {};
@@ -160,6 +163,8 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{task.place.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{task.members.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{task.deadline}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{task.points}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Tags:"}{task.tags}</h6>
                     <SubTasks subtasks={task.subtasks.clone()}/>
                     <button class="btn btn-danger" onclick={ctx.link().callback(move |_: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
                     <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
@@ -189,6 +194,7 @@ struct ListProp {
     pub name: String,
     pub id: i32,
     lists: Option<Vec<List>>,
+    pub filter: Option<TaskFilter>,
 }
 
 pub struct Board {
@@ -197,6 +203,7 @@ pub struct Board {
     lists: Option<Vec<List>>,
     token: Option<String>,
     error: bool,
+    filter: Option<TaskFilter>
 }
 
 pub enum Msg {
@@ -205,7 +212,10 @@ pub enum Msg {
     Update(Result<Vec<List>, Error>),
     UpdateTaskSubmit,
     AddTask,
+    Filter,
+    Reset
 }
+
 
 impl Component for Board {
     type Message = Msg;
@@ -220,6 +230,7 @@ impl Component for Board {
             lists: None,
             token: map_token(LocalStorage::get("Token")),
             error: false,
+            filter: None
         }
     }
 
@@ -262,6 +273,8 @@ impl Component for Board {
                 let token = self.token.clone().unwrap();
                 let deadline = getValue("deadline");
                 let subtasks = getValue("subtasks");
+                let points = getValue("points").parse::<i32>().unwrap();
+                let tags = getValue("tags");
                 ctx.link().send_future(async move {
                     let res = create_task(
                         &token,
@@ -274,12 +287,19 @@ impl Component for Board {
                             place: Some(place),
                             members: Some(members),
                             list,
+                            points,
+                            tags
                         },
                     )
                     .await;
                     Self::Message::Res(res)
                 });
                 false
+            }
+            Self::Message::Reset => {
+                self.filter = None;
+                self.lists = None;
+                true
             }
             Self::Message::UpdateTaskSubmit => {
                 let token = self.token.clone().unwrap();
@@ -291,6 +311,8 @@ impl Component for Board {
                 let id = getValue("idUpdate").parse::<i32>().unwrap();
                 let deadline = getValue("deadlineUpdate");
                 let subtasks = getValue("subtasksUpdate");
+                let points = getValue("pointsUpdate").parse::<i32>().unwrap();
+                let tags = getValue("tagsUpdate");
                 ctx.link().send_future(async move {
                     let res = update_task(
                         &token,
@@ -303,12 +325,37 @@ impl Component for Board {
                             members: Some(members),
                             list,
                             deadline,
+                            points,
+                            tags
                         },
                     )
                     .await;
                     Self::Message::Res(res)
                 });
                 false
+            }
+            Self::Message::Filter => {
+                let name = getValue("nameTaskFilter");
+                let place = getValue("placeFilter");
+                let members = getValue("membersFilter");
+                let deadline_start = getValue("deadlineStart");
+                let deadline_end = getValue("deadlineEnd");
+                let points_min = map_result(getValue("pointsMin").parse::<i32>());
+                let points_max = map_result(getValue("pointsMax").parse::<i32>());
+                let tags = getValue("tagsFilter");
+                let filter = TaskFilter {
+                    name,
+                    place,
+                    members,
+                    deadline_start,
+                    deadline_end,
+                    points_min,
+                    points_max,
+                    tags
+                };
+                self.filter = Some(filter);
+                self.lists = None;
+                true
             }
             _ => {
                 self.error = true;
@@ -333,9 +380,10 @@ impl Component for Board {
         }
         let lists = self.lists.clone();
         let lists_clone = lists.clone();
+        let filter = self.filter.clone();
         let lists = lists.unwrap().into_iter().map(|list| {
             html! {
-                <ListDetails name={list.name} id ={list.id.unwrap()} lists={lists_clone.clone()}/>
+                <ListDetails name={list.name} id ={list.id.unwrap()} lists={lists_clone.clone()} filter={filter.clone()}/>
             }
         });
         let lists_options = self.lists.clone();
@@ -362,7 +410,8 @@ impl Component for Board {
                 </div>
                 <div class="col-xs-6" style="padding-left: 80px;">
                     <button class="btn btn-primary" id="myBtn" onclick={|_: MouseEvent| {openModal("myModal");}} >{"Add task"}</button>
-
+                    <button class="btn btn-primary" id="myBtnFilter" onclick={move |_: MouseEvent| {if filter.clone().is_some() {filter.clone().unwrap().set_filters();} openModal("filterModal");}} >{"Filter tasks"}</button>
+                    <button class="btn btn-danger" id="myBtnReset" onclick={ctx.link().callback(|_: MouseEvent| {Msg::Reset})}>{"Reset filters"}</button>
                     <div id="myModal" class="modal">
 
                     <div class="modal-content">
@@ -399,6 +448,15 @@ impl Component for Board {
                                 <select id="list" name="team">
                                     {for lists_options}
                                 </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="points">{"Function points:"}</label>
+                            <input type="number" class="form-control" id="points" min="0"/>
+                        </div>
+                        <div class="form-group">
+                            <label for="tags">{"Tags:"}</label>
+                            <input type="text" class="form-control"  id="tags"/>
+                            <small id="TagsHelp" class="form-text text-muted">{"Tags should be seperated by ;"}</small>
                         </div>
                         <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::AddTask})}>{"Submit"}</button>
                     </form>
@@ -441,15 +499,72 @@ impl Component for Board {
                             <small id="subTasksHelpUpdate" class="form-text text-muted">{"Subtasks should be seperated by ;"}</small>
                     </div>
                     <div class="form-group">
+                            <label for="pointsUpdate">{"Function points:"}</label>
+                            <input type="number" class="form-control" id="pointsUpdate" min="0"/>
+                        </div>
+                    <div class="form-group">
                     <label for="team">{"Choose list:"}</label>
                         <select id="listUpdate" name="team">
                             {for lists_options_copy}
                         </select>
                     </div>
+                    <div class="form-group">
+                            <label for="tagsUpdate">{"Tags:"}</label>
+                            <input type="text" class="form-control"  id="tagsUpdate"/>
+                            <small id="TagsHelp" class="form-text text-muted">{"Tags should be seperated by ;"}</small>
+                        </div>
                     <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Self::Message::UpdateTaskSubmit})}>{"Submit"}</button>
                 </form>
                 </div>
                 </div>
+                <div id="filterModal" class="modal">
+
+                <div class="modal-content">
+                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("filterModal");}}>{"Hide"}</span>
+                    <form>
+                    <div class="form-group">
+                        <label for="nameTaskFilter">{"name contains"}</label>
+                        <input type="text" class="form-control" id="nameTaskFilter" aria-describedby="usernameHelp" placeholder="Enter task name"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="placeFilter">{"place contains"}</label>
+                        <input type="text" class="form-control" id="placeFilter" aria-describedby="usernameHelp" placeholder="Enter place"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="membersFilter">{"Assigned people contains"}</label>
+                        <input type="text" class="form-control" id="membersFilter" aria-describedby="usernameHelp" placeholder="Enter assigned people"/>
+                        <small id="membersHelpFilter" class="form-text text-muted">{"Assigned people should be seperated by ;"}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="deadlineStart">{"Deadline start:"}</label>
+                        <input type="date" class="form-control" id="deadlineStart"/>
+                        <small id="statrtHelp" class="form-text text-muted">{"Leave empty for no filter"}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="deadlineEnd">{"Deadline end:"}</label>
+                        <input type="date" class="form-control" id="deadlineEnd"/>
+                        <small id="endHelp" class="form-text text-muted">{"Leave empty for no filter"}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pointsMin">{"Points min:"}</label>
+                        <input type="number" class="form-control" id="pointsMin"/>
+                        <small id="minHelp" class="form-text text-muted">{"Leave empty for no filter"}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pointsMax">{"Points max:"}</label>
+                        <input type="number" class="form-control" id="pointsMax"/>
+                        <small id="maxHelp" class="form-text text-muted">{"Leave empty for no filter"}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="tags">{"Tags contains:"}</label>
+                        <input type="text" class="form-control"  id="tagsFilter"/>
+                        <small id="TagsHelp" class="form-text text-muted">{"Tags should be seperated by ;"}</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::Filter})}>{"Submit"}</button>
+                </form>
+                </div>
+
+                </div>  
             </div>
             </>
         }
