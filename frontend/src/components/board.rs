@@ -6,9 +6,9 @@ use super::navbar::Navbar;
 use crate::{
     api::{
         create_list, create_task, delete_list, delete_task, get_lists, get_task, get_tasks,
-        update_task,
+        update_task, get_logs,
     },
-    types::{List, Task, TaskFilter},
+    types::{List, Task, TaskFilter, Log, IdProp},
     utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue, map_result},
 };
 
@@ -48,6 +48,74 @@ fn sub_tasks(SubTasksProps { subtasks }: &SubTasksProps) -> Html {
     }
 }
 
+struct Logs {
+    token: Option<String>,
+    logs: Option<Vec<Log>>
+}
+
+pub enum MsgLogs {
+    Update(Result<Vec<Log>, Error>),
+}
+
+impl Component for Logs {
+    type Message = MsgLogs;
+    type Properties = IdProp;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self {
+            logs: None,
+            token: map_token(LocalStorage::get("Token")),
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+            if let Self::Message::Update(Ok(logs)) = msg {
+                self.logs = Some(logs);
+            }
+            true
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.logs.is_none() {
+            let token = self.token.clone().unwrap();
+            let id = ctx.props().id;
+            ctx.link().send_future(async move {
+                let logs = get_logs(id, &token).await;
+                Self::Message::Update(logs)
+            });
+            return html! {};
+        }
+
+        let logs = self.logs.clone();
+        let logs = logs.unwrap().into_iter().map(|log| html! {
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">{"Name: "}{log.name}{" Action: "}{log.action}{" When:"}{log.timestamp}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Note:"}{log.note.unwrap()}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{log.place.unwrap()}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{log.members.unwrap()}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{log.deadline}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{log.points}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Tags:"}{log.tags}</h6>
+                    <SubTasks subtasks={log.subtasks.clone()}/>
+                </div>
+            </div>
+        });
+
+        let id_prop = ctx.clone().props().id;
+        let id = format!("logs{}", id_prop);
+        html! {
+            <div id={id.clone()} class="modal">
+
+                <div class="modal-content">
+                    <span class="close btn btn-danger" onclick={move |_: MouseEvent| {hideModal(id.as_str());}}>{"Hide"}</span>
+                    {for logs}
+                </div>
+            </div>
+        }
+    }
+}
+
 struct ListDetails {
     tasks: Option<Vec<Task>>,
     token: Option<String>,
@@ -60,6 +128,7 @@ pub enum MsgList {
     Return,
     UpdateTask(Option<i32>),
     DeleteList,
+    Pass
 }
 
 impl Component for ListDetails {
@@ -139,6 +208,9 @@ impl Component for ListDetails {
                 });
                 true
             }
+            Self::Message::Pass => {
+                false
+            }
             _ => true,
         }
     }
@@ -166,8 +238,10 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{task.points}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Tags:"}{task.tags}</h6>
                     <SubTasks subtasks={task.subtasks.clone()}/>
+                    <Logs id={task.id.unwrap()}/>
                     <button class="btn btn-danger" onclick={ctx.link().callback(move |_: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
                     <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal(format!("logs{}", task.id.unwrap()).as_str()); Self::Message::Pass})}>{"Show logs"}</button>
                 </div>
             </div>
         });

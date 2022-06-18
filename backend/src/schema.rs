@@ -63,6 +63,24 @@ table! {
 }
 
 table! {
+    log(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        list -> Integer,
+        note -> Nullable<Varchar>,
+        place -> Nullable<Varchar>,
+        members -> Nullable<Varchar>,
+        timestamp -> Varchar,
+        action -> Varchar,
+        task_id -> Integer,
+        deadline -> Varchar,
+        subtasks -> Varchar,
+        points -> Integer,
+        tags -> Varchar,
+    }
+}
+
+table! {
     timer(id) {
         id -> Nullable<Integer>,
         name -> Varchar,

@@ -3,7 +3,7 @@ use gloo_net::Error;
 
 use crate::types::{
     BoardUpdate, List, Login, LoginResponse, PrivateBoard, PrivateBoardData, Task, Team, TeamBoard,
-    TeamBoardData, TeamData, Timer, TimerData, TaskFilter,
+    TeamBoardData, TeamData, Timer, TimerData, TaskFilter, Log,
 };
 
 static BACKEND: &str = "http://localhost:8000/";
@@ -175,6 +175,17 @@ pub async fn get_lists(board_id: i32, board_type: String, token: &str) -> Result
         .json()
         .await
 }
+
+pub async fn get_logs(task_id: i32, token: &str) -> Result<Vec<Log>, Error> {
+    let url = format!("{}logs/get/{}", BACKEND, task_id);
+    Request::get(url.as_str())
+        .header("Authorization", token)
+        .send()
+        .await?
+        .json()
+        .await
+}
+
 
 pub async fn get_tasks(token: &str, list_id: i32, filter: Option<TaskFilter>) -> Result<Vec<Task>, Error> {
     let url = format!("{}{}{}", BACKEND, "task/get/", list_id);

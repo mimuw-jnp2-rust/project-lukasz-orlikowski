@@ -148,3 +148,25 @@ impl Timer {
 pub struct TimerData {
     pub name: String
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
+pub struct IdProp {
+    pub id: i32
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Log {
+    pub id: Option<i32>,
+    pub name: String,
+    pub list: i32,
+    pub note: Option<String>,
+    pub place: Option<String>,
+    pub members: Option<String>,
+    pub timestamp: String,
+    pub action: String,
+    pub task_id: i32,
+    pub deadline: String,
+    pub subtasks: String,
+    pub points: i32,
+    pub tags: String
+}

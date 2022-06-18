@@ -1,6 +1,7 @@
 use std::fmt::format;
 
 use crate::db::Connection;
+use crate::log::Log;
 use crate::schema::task;
 use crate::types::TaskFilter;
 use diesel::prelude::*;
@@ -9,7 +10,13 @@ use diesel::Insertable;
 use diesel::Queryable;
 use rocket::serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug)]
+no_arg_sql_function!(
+    last_insert_rowid,
+    diesel::sql_types::Integer,
+    "Represents the SQL last_insert_row() function"
+);
+
+#[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug, Clone)]
 #[table_name = "task"]
 pub struct Task {
     pub id: Option<i32>,
@@ -26,19 +33,33 @@ pub struct Task {
 
 impl Task {
     pub async fn create(task: Task, connection: &Connection) -> QueryResult<usize> {
-        connection
-            .run(|conn| diesel::insert_into(task::table).values(task).execute(conn))
-            .await
+        let task_clone = task.clone();
+        let res = connection
+            .run(|conn| diesel::insert_into(task::table).values(task_clone).execute(conn))
+            .await;
+        if res.is_ok() {
+            let id = connection.run(|conn| diesel::select(last_insert_rowid)
+            .get_result::<i32>(conn)).await;
+            let log = Log::from_task(task, id.unwrap(), "created".to_owned());
+            let _ = Log::create(log, connection).await;
+        }
+        res
     }
 
     pub async fn update(task: Task, connection: &Connection) -> QueryResult<usize> {
-        connection
+        let task_clone = task.clone();
+        let res = connection
             .run(|conn| {
-                diesel::update(task::table.filter(task::id.eq(task.id.unwrap())))
-                    .set(task)
+                diesel::update(task::table.filter(task::id.eq(task_clone.id.unwrap())))
+                    .set(task_clone)
                     .execute(conn)
             })
-            .await
+            .await;
+        if res.is_ok() {
+            let log = Log::from_task(task.clone(), task.id.unwrap(), "updated".to_owned());
+            let _ = Log::create(log, connection).await;
+        }
+        res
     }
 
     pub async fn get(id: i32, connection: &Connection) -> QueryResult<Vec<Task>> {

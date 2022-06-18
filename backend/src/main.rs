@@ -3,6 +3,7 @@ use crate::types::{BoardUpdate, PrivateBoardData, TeamBoardData, TeamBoardWithNa
 use board::{PrivateBoard, TeamBoard};
 use db::Connection;
 use list::List;
+use log::Log;
 use rocket::futures::future::join_all;
 use rocket::http::Status;
 use rocket::serde::json::Json;
@@ -27,6 +28,7 @@ pub mod team;
 pub mod types;
 pub mod user;
 pub mod timer;
+pub mod log;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
@@ -179,6 +181,18 @@ async fn get_team_boards(
     let user_id = User::get_username_id(key.0, &connection).await;
     match Team::get_teams_boards(user_id.unwrap(), &connection).await {
         Ok(boards) => Ok(Json(boards)),
+        _ => Err(Status::NotFound),
+    }
+}
+
+#[get("/logs/get/<id>")]
+async fn get_logs(
+    id: i32,
+    connection: Connection,
+    key: ApiKey,
+) -> Result<Json<Vec<Log>>, Status> {
+    match Log::get(id, &connection).await {
+        Ok(logs) => Ok(Json(logs)),
         _ => Err(Status::NotFound),
     }
 }
@@ -418,6 +432,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount(
             "/",
             routes![
+                get_logs,
                 delete_list,
                 update_team,
                 update_private,
