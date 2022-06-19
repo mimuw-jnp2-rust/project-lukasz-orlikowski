@@ -1,10 +1,10 @@
 use gloo_net::http::Request;
 use gloo_net::Error;
 
-use crate::types::{
+use crate::{types::{
     BoardUpdate, List, Login, LoginResponse, PrivateBoard, PrivateBoardData, Task, Team, TeamBoard,
-    TeamBoardData, TeamData, Timer, TimerData, TaskFilter, Log,
-};
+    TeamBoardData, TeamData, Timer, TimerData, TaskFilter, Log, Milestone, MilestoneCreate,
+}, components::milestone};
 
 static BACKEND: &str = "http://localhost:8000/";
 
@@ -281,6 +281,26 @@ pub async fn create_timer(token: &str, name: &str) -> Result<bool, Error> {
     Request::post(url.as_str())
         .header("Authorization", token)
         .json(&timer)?
+        .send()
+        .await?
+        .json()
+        .await
+}
+
+pub async fn get_milestones(id: i32, board_type: String, token: &str) -> Result<Vec<Milestone>, Error> {
+    let url = format!("{}milestone/get/{}/{}", BACKEND, id, board_type);
+    Request::get(url.as_str()).header("Authorization", token)
+    .send()
+    .await?
+    .json()
+    .await
+}
+
+pub async fn create_milestone(token: &str, milestone: MilestoneCreate) -> Result<bool, Error> {
+    let url = format!("{}milestone/create", BACKEND);
+    Request::post(url.as_str())
+        .header("Authorization", token)
+        .json(&milestone)?
         .send()
         .await?
         .json()

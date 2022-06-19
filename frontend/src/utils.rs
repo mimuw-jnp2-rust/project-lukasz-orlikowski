@@ -79,3 +79,27 @@ extern "C" {
 extern "C" {
     pub fn reload() -> bool;
 }
+
+#[wasm_bindgen(inline_js = "export function set_checked(input) { 
+    var el = document.getElementById(input);
+    el.checked = true;
+    return true;
+ }")]
+
+extern "C" {
+pub fn set_checked(input: &str) -> bool;
+}
+
+#[wasm_bindgen(inline_js = "export function is_checked(input) { 
+    var el = document.getElementById(input);
+    if (el.checked) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+ }")]
+
+extern "C" {
+pub fn is_checked(input: &str) -> i32;
+}

@@ -18,6 +18,7 @@ no_arg_sql_function!(
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug, Clone)]
 #[table_name = "task"]
+#[changeset_options(treat_none_as_null="true")]
 pub struct Task {
     pub id: Option<i32>,
     pub name: String,
@@ -28,7 +29,9 @@ pub struct Task {
     pub deadline: String,
     pub subtasks: String,
     pub points: i32,
-    pub tags: String
+    pub tags: String,
+    pub done: i32, // In sqlite we don't have boolean types
+    pub milestone: Option<i32>
 }
 
 impl Task {

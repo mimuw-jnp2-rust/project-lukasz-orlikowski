@@ -1,15 +1,16 @@
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{function_component, html, Component, Context, Html, MouseEvent, Properties};
+use super::milestone::MilestoneList;
 
 use super::navbar::Navbar;
 use crate::{
     api::{
         create_list, create_task, delete_list, delete_task, get_lists, get_task, get_tasks,
-        update_task, get_logs,
+        update_task, get_logs, get_milestones,
     },
-    types::{List, Task, TaskFilter, Log, IdProp},
-    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue, map_result},
+    types::{List, Task, TaskFilter, Log, IdProp, Milestone},
+    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue, map_result, set_checked, is_checked},
 };
 
 #[function_component(ListOptions)]
@@ -182,6 +183,9 @@ impl Component for ListDetails {
                     setValue("nameUpdateTask", task.name.as_str());
                     setValue("pointsUpdate", task.points.to_string().as_str());
                     setValue("tagsUpdate", task.tags.as_str());
+                    if task.done == 1 {
+                        set_checked("doneUpdate");
+                    }
 
                     if task.note.is_some() {
                         setValue("noteUpdate", task.note.unwrap().as_str());
@@ -204,6 +208,12 @@ impl Component for ListDetails {
                     setValue("deadlineUpdate", task.deadline.as_str());
 
                     setValue("listUpdate", task.list.to_string().as_str());
+                    if task.milestone.is_none() {
+                        setValue("milestoneUpdate", "None");
+                    }
+                    else {
+                        setValue("milestoneUpdate", task.milestone.unwrap().to_string().as_str());
+                    }
                     Self::Message::Return
                 });
                 true
@@ -277,7 +287,8 @@ pub struct Board {
     lists: Option<Vec<List>>,
     token: Option<String>,
     error: bool,
-    filter: Option<TaskFilter>
+    filter: Option<TaskFilter>,
+    milestones: Option<Vec<Milestone>>,
 }
 
 pub enum Msg {
@@ -287,7 +298,8 @@ pub enum Msg {
     UpdateTaskSubmit,
     AddTask,
     Filter,
-    Reset
+    Reset,
+    UpdateMilestones(Result<Vec<Milestone>, Error>)
 }
 
 
@@ -304,7 +316,8 @@ impl Component for Board {
             lists: None,
             token: map_token(LocalStorage::get("Token")),
             error: false,
-            filter: None
+            filter: None,
+            milestones: None
         }
     }
 
@@ -349,6 +362,8 @@ impl Component for Board {
                 let subtasks = getValue("subtasks");
                 let points = getValue("points").parse::<i32>().unwrap();
                 let tags = getValue("tags");
+                let done = is_checked("done");
+                let milestone = map_result(getValue("milestone").parse::<i32>());
                 ctx.link().send_future(async move {
                     let res = create_task(
                         &token,
@@ -362,7 +377,9 @@ impl Component for Board {
                             members: Some(members),
                             list,
                             points,
-                            tags
+                            tags,
+                            done,
+                            milestone
                         },
                     )
                     .await;
@@ -387,6 +404,8 @@ impl Component for Board {
                 let subtasks = getValue("subtasksUpdate");
                 let points = getValue("pointsUpdate").parse::<i32>().unwrap();
                 let tags = getValue("tagsUpdate");
+                let done = is_checked("doneUpdate");
+                let milestone = map_result(getValue("milestoneUpdate").parse::<i32>());
                 ctx.link().send_future(async move {
                     let res = update_task(
                         &token,
@@ -400,13 +419,19 @@ impl Component for Board {
                             list,
                             deadline,
                             points,
-                            tags
+                            tags,
+                            done,
+                            milestone
                         },
                     )
                     .await;
                     Self::Message::Res(res)
                 });
                 false
+            }
+            Self::Message::UpdateMilestones(Ok(milestones)) => {
+                self.milestones = Some(milestones);
+                true
             }
             Self::Message::Filter => {
                 let name = getValue("nameTaskFilter");
@@ -452,6 +477,16 @@ impl Component for Board {
             });
             return html! {};
         }
+        if self.milestones.is_none() {
+            let token = self.token.clone().unwrap();
+            let board_type = self.board_type.clone();
+            let id = self.board_id.clone();
+            ctx.link().send_future(async move {
+                let res = get_milestones(id, board_type, &token).await;
+                Self::Message::UpdateMilestones(res)
+            });
+            return html! {}
+        }
         let lists = self.lists.clone();
         let lists_clone = lists.clone();
         let filter = self.filter.clone();
@@ -465,12 +500,18 @@ impl Component for Board {
                                 <ListOptions name={list.name} board={list.board} board_type={list.board_type} id={list.id} />
                             });
         let lists_options_copy = lists_options.clone();
+        let milestone_options = self.milestones.clone();
+        let milestone_options = milestone_options.unwrap().into_iter().map(|milestone| html! {
+            <option value={milestone.id.unwrap().to_string()}>{milestone.name}</option>
+        });
+        let milestone_options_clone = milestone_options.clone();
         html! {
             <>
             <Navbar />
             <div class="row">
                 {for lists}
                 <div class="col-xs-6" style="padding-left: 80px;">
+                    <h1>{"Add new list"}</h1>
                     <form>
                         <div class="form-group">
                             <label for="name">{"name"}</label>
@@ -522,6 +563,17 @@ impl Component for Board {
                                 <select id="list" name="team">
                                     {for lists_options}
                                 </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="milestone">{"Choose milestone:"}</label>
+                                <select id="milestone">
+                                    <option value="None">{"None"}</option>
+                                    {for milestone_options}
+                                </select>
+                        </div>
+                        <div class="form-group">
+                            <input type="checkbox" id="done" name="Done" value="yes"/>  
+                            <label for="done">{"Done:"}</label>
                         </div>
                         <div class="form-group">
                             <label for="points">{"Function points:"}</label>
@@ -583,6 +635,17 @@ impl Component for Board {
                         </select>
                     </div>
                     <div class="form-group">
+                            <label for="milestoneUpdate">{"Choose milestone:"}</label>
+                                <select id="milestoneUpdate">
+                                <option value="None">{"None"}</option>
+                                    {for milestone_options_clone}
+                                </select>
+                    </div>
+                    <div class="form-group">
+                            <input type="checkbox" id="doneUpdate" name="Done" value="yes"/>  
+                            <label for="doneUpdate">{"Done:"}</label>
+                    </div>
+                    <div class="form-group">
                             <label for="tagsUpdate">{"Tags:"}</label>
                             <input type="text" class="form-control"  id="tagsUpdate"/>
                             <small id="TagsHelp" class="form-text text-muted">{"Tags should be seperated by ;"}</small>
@@ -638,7 +701,9 @@ impl Component for Board {
                 </form>
                 </div>
 
-                </div>  
+                </div>
+                <div class="col-xs-6 vl"></div>
+                <MilestoneList id={self.board_id.clone()} board_type={self.board_type.clone()} milestones={self.milestones.clone()}/>  
             </div>
             </>
         }

@@ -14,3 +14,7 @@ pub fn get_date() -> String {
     let local: DateTime<Local> = Local::now();
     format!("{}", local)
 }
+
+pub fn matches(x: Option<i32>, y: i32) -> bool{
+    x.is_some() && x.unwrap() == y
+}

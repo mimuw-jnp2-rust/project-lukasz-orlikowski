@@ -9,5 +9,7 @@ CREATE TABLE task (
   `subtasks` VARCHAR(200),
   `points` INTEGER,
   `tags` VARCHAR(200),
+  `done` INTEGER,
+  `milestone` INTEGER,
    FOREIGN KEY(`list`) REFERENCES list(id) ON DELETE CASCADE
 )

@@ -7,3 +7,4 @@ pub mod register;
 pub mod team_board_create;
 pub mod team_create;
 pub mod timer;
+pub mod milestone;

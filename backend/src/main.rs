@@ -4,6 +4,7 @@ use board::{PrivateBoard, TeamBoard};
 use db::Connection;
 use list::List;
 use log::Log;
+use milestone::{MilestoneResponse, Milestone};
 use rocket::futures::future::join_all;
 use rocket::http::Status;
 use rocket::serde::json::Json;
@@ -18,6 +19,7 @@ use task::Task;
 use user::User;
 
 pub mod utils;
+pub mod milestone;
 pub mod auth;
 pub mod board;
 pub mod db;
@@ -401,6 +403,22 @@ async fn get_timers(connection: Connection, key: ApiKey) -> Result<Json<Vec<Time
     }
 }
 
+#[get("/milestone/get/<id>/<board_type>")]
+async fn get_milestones(id: i32, board_type: String, connection: Connection, key: ApiKey) -> Result<Json<Vec<MilestoneResponse>>, Status> {
+    match Milestone::get(id, board_type, &connection).await {
+        Ok(milestones) => Ok(Json(milestones)),
+        _ => Err(Status::NotFound)
+    }
+}
+
+#[post("/milestone/create", data = "<data>")]
+async fn milestone_create(data: Json<Milestone>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+    match Milestone::create(data.into_inner(), &connection).await {
+        Ok(cnt) => Ok(Json(cnt > 0)),
+        Err(x) => {Err(Status::NotFound)}
+    }
+}
+
 async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
     embed_migrations!();
 
@@ -432,6 +450,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .mount(
             "/",
             routes![
+                get_milestones,
+                milestone_create,
                 get_logs,
                 delete_list,
                 update_team,

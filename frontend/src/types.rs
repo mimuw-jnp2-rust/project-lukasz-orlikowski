@@ -12,6 +12,24 @@ pub struct LoginResponse {
     pub token: String,
 }
 
+#[derive(Serialize, Clone, PartialEq, Deserialize, Debug)]
+pub struct MilestoneCreate {
+    pub id: Option<i32>,
+    pub name: String,
+    pub board_id: i32,
+    pub board_type: String,
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+pub struct Milestone {
+    pub id: Option<i32>,
+    pub name: String,
+    pub done: i32,
+    pub total: i32,
+    pub board_id: i32,
+    pub board_type: String,
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct Login {
     pub username: String,
@@ -81,7 +99,9 @@ pub struct Task {
     pub deadline: String,
     pub subtasks: String,
     pub points: i32,
-    pub tags: String
+    pub tags: String,
+    pub done: i32,
+    pub milestone: Option<i32>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -152,6 +172,13 @@ pub struct TimerData {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
 pub struct IdProp {
     pub id: i32
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
+pub struct BoardProp {
+    pub id: i32,
+    pub board_type: String,
+    pub milestones: Option<Vec<Milestone>>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

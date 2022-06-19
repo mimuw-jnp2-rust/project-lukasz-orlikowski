@@ -59,6 +59,17 @@ table! {
         subtasks -> Varchar,
         points -> Integer,
         tags -> Varchar,
+        done -> Integer,
+        milestone -> Nullable<Integer>,
+    }
+}
+
+table! {
+    milestone(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        board_id -> Integer,
+        board_type -> Varchar,
     }
 }
 
