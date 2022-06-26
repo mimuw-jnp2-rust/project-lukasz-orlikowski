@@ -5,6 +5,7 @@ use components::private_board_create::PrivateBoardCreate;
 use components::register::RegisterForm;
 use components::team_board_create::TeamBoardCreate;
 use components::team_create::TeamCreate;
+use components::timer::TimerList;
 use yew::prelude::*;
 
 mod api;
@@ -30,6 +31,11 @@ enum Route {
     TeamBoardCreate,
     #[at("board")]
     Board,
+    #[at("timers")]
+    TimerList,
+    #[not_found]
+    #[at("/")]
+    NotFound,
 }
 
 #[function_component(App)]
@@ -50,6 +56,8 @@ fn switch(routes: &Route) -> Html {
         Route::TeamCreate => html! {<TeamCreate />},
         Route::TeamBoardCreate => html!(<TeamBoardCreate />),
         Route::Board => html!(<Board />),
+        Route::TimerList => html!(<TimerList />),
+        Route::NotFound => html!(<Main />),
     }
 }
 

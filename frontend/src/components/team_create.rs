@@ -1,6 +1,6 @@
 use super::navbar::Navbar;
 use crate::api::create_team;
-use crate::utils::{getValue, Msg};
+use crate::utils::{get_value, Msg};
 use crate::Route;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{html, Component, Context, Html, MouseEvent};
@@ -37,8 +37,8 @@ impl Component for TeamCreate {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async move {
-                    let name = getValue("teamName");
-                    let members = getValue("teamMembers");
+                    let name = get_value("teamName");
+                    let members = get_value("teamMembers");
                     let res = create_team(name.as_str(), members.as_str(), token.as_str()).await;
                     Self::Message::Res(res)
                 });
@@ -51,13 +51,16 @@ impl Component for TeamCreate {
             }
             _ => {
                 self.error = true;
-                self.success = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Main}/> };
+        }
         match self.token {
             None => html! { <Redirect<Route> to={Route::Login}/> },
             _ => html! {

@@ -6,7 +6,6 @@ use diesel::Insertable;
 use diesel::Queryable;
 use rocket::serde::{Deserialize, Serialize};
 
-#[allow(clippy::all)]
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug)]
 #[table_name = "list"]
 pub struct List {
@@ -18,6 +17,7 @@ pub struct List {
 
 impl List {
     pub async fn create(list: List, connection: &Connection) -> QueryResult<usize> {
+        println!("{:?}", list);
         connection
             .run(|conn| diesel::insert_into(list::table).values(list).execute(conn))
             .await

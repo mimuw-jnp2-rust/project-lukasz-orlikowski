@@ -1,6 +1,6 @@
 use super::navbar::Navbar;
 use crate::api::create_private_board;
-use crate::utils::{getValue, Msg};
+use crate::utils::{get_value, Msg};
 use crate::Route;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{html, Component, Context, Html, MouseEvent};
@@ -37,7 +37,7 @@ impl Component for PrivateBoardCreate {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async move {
-                    let name = getValue("boardName");
+                    let name = get_value("boardName");
                     let res = create_private_board(name.as_str(), token.as_str()).await;
                     Self::Message::Res(res)
                 });
@@ -50,13 +50,16 @@ impl Component for PrivateBoardCreate {
             }
             _ => {
                 self.error = true;
-                self.success = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Main}/> };
+        }
         match self.token {
             None => html! { <Redirect<Route> to={Route::Login}/> },
             _ => html! {

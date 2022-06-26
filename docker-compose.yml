@@ -1,0 +1,26 @@
+version: '3.3'
+
+services:
+  frontend:
+    build: ./frontend
+    command: trunk serve  --address 0.0.0.0
+    volumes:
+      - ./frontend/:/app/
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
+    environment:
+      - BACKEND=http://backend:8000/
+
+  backend:
+    build: ./backend
+    command: cargo run
+    volumes:
+      - ./backend/:/app/
+    ports:
+      - "8000:8000"
+    environment:
+      - BACKEND=http://frontend:8080/
+
+  

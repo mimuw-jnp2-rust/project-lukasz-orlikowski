@@ -1,6 +1,6 @@
 use crate::api::login;
 use crate::types::LoginResponse;
-use crate::utils::{getValue, Msg};
+use crate::utils::{get_value, Msg};
 use crate::Route;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{html, Component, Context, Html, MouseEvent};
@@ -26,8 +26,8 @@ impl Component for LoginForm {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async {
-                    let name = getValue("loginName");
-                    let pass = getValue("loginPass");
+                    let name = get_value("loginName");
+                    let pass = get_value("loginPass");
                     let res = login(name.as_str(), pass.as_str()).await;
                     Self::Message::Res(res)
                 });

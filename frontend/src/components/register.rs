@@ -2,7 +2,7 @@ use yew::{html, Component, Context, Html, MouseEvent};
 
 use crate::{
     api::register,
-    utils::{getValue, Msg},
+    utils::{get_value, Msg},
     Route,
 };
 use yew_router::prelude::*;
@@ -27,8 +27,8 @@ impl Component for RegisterForm {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async {
-                    let name = getValue("registerName");
-                    let pass = getValue("registerPass");
+                    let name = get_value("registerName");
+                    let pass = get_value("registerPass");
                     let res = register(name.as_str(), pass.as_str()).await;
                     Self::Message::Res(res)
                 });
@@ -41,12 +41,16 @@ impl Component for RegisterForm {
             }
             _ => {
                 self.error = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Login}/> };
+        }
         html! {
             <div class="d-flex justify-content-md-center align-items-center vh-100">
                 <div>

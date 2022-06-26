@@ -1,7 +1,7 @@
 use super::navbar::Navbar;
 use crate::api::{create_team_board, get_user_teams};
 use crate::types::Team;
-use crate::utils::getValue;
+use crate::utils::get_value;
 use crate::Route;
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
@@ -57,8 +57,8 @@ impl Component for TeamBoardCreate {
         match msg {
             Self::Message::Submit => {
                 ctx.link().send_future(async move {
-                    let name = getValue("boardName");
-                    let team = getValue("teamName");
+                    let name = get_value("boardName");
+                    let team = get_value("teamName");
                     let res = create_team_board(
                         name.as_str(),
                         team.parse::<i32>().unwrap(),
@@ -87,13 +87,16 @@ impl Component for TeamBoardCreate {
             }
             _ => {
                 self.error = true;
-                self.success = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Main}/> };
+        }
         if self.teams.is_none() {
             ctx.link().send_message(Self::Message::Fetch);
             html! {}

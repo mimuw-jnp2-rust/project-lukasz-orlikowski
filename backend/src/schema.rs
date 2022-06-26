@@ -57,5 +57,47 @@ table! {
         members -> Nullable<Varchar>,
         deadline -> Varchar,
         subtasks -> Varchar,
+        points -> Integer,
+        tags -> Varchar,
+        done -> Integer,
+        milestone -> Nullable<Integer>,
+    }
+}
+
+table! {
+    milestone(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        board_id -> Integer,
+        board_type -> Varchar,
+    }
+}
+
+table! {
+    log(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        list -> Integer,
+        note -> Nullable<Varchar>,
+        place -> Nullable<Varchar>,
+        members -> Nullable<Varchar>,
+        timestamp -> Varchar,
+        action -> Varchar,
+        task_id -> Integer,
+        deadline -> Varchar,
+        subtasks -> Varchar,
+        points -> Integer,
+        tags -> Varchar,
+    }
+}
+
+table! {
+    timer(id) {
+        id -> Nullable<Integer>,
+        name -> Varchar,
+        user_id -> Integer,
+        status -> Varchar,
+        time -> Integer,
+        start -> Nullable<Integer>,
     }
 }

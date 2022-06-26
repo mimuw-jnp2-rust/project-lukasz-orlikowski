@@ -53,10 +53,7 @@ impl User {
                     .order(users::id)
                     .first(conn);
                 match res {
-                    Ok(user) => {
-                        println!("{:?}", user);
-                        Some(user)
-                    }
+                    Ok(user) => Some(user),
                     Err(_) => None,
                 }
             })

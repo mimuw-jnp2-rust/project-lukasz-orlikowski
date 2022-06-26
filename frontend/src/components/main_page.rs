@@ -3,7 +3,7 @@ use crate::Route;
 use crate::{
     api::{delete_private, delete_team_board, get_private_boards, get_team_boards, update_board},
     types::{PrivateBoard, TeamBoard},
-    utils::{getValue, hideModal, map_token, openModal, reload, setValue},
+    utils::{get_value, hide_modal, map_token, open_modal, reload, set_value},
 };
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
@@ -44,9 +44,9 @@ impl Component for TeamDetails {
             Self::Message::Update => {
                 let name = ctx.props().name.as_str();
                 let id = ctx.props().id.unwrap();
-                setValue("nameBoard", name);
-                setValue("idBoard", id.to_string().as_str());
-                setValue("typeBoard", "team");
+                set_value("nameBoard", name);
+                set_value("idBoard", id.to_string().as_str());
+                set_value("typeBoard", "team");
                 false
             }
             _ => {
@@ -64,7 +64,7 @@ impl Component for TeamDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Team:"}{&ctx.props().team_name}</h6>
                     <a href={"board?board_type=team&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|_: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {open_modal("myModal"); Self::Message::Update})}>{"Update"}</button>
             </div>
             </div>
         }
@@ -99,9 +99,9 @@ impl Component for PrivateDetails {
             Self::Message::Update => {
                 let name = ctx.props().name.as_str();
                 let id = ctx.props().id.unwrap();
-                setValue("nameBoard", name);
-                setValue("idBoard", id.to_string().as_str());
-                setValue("typeBoard", "private");
+                set_value("nameBoard", name);
+                set_value("idBoard", id.to_string().as_str());
+                set_value("typeBoard", "private");
                 false
             }
             _ => {
@@ -116,9 +116,9 @@ impl Component for PrivateDetails {
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
-                    <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
+                    <a href={format!("board?board_type=private&&id={}",ctx.props().id.unwrap())} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|_: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {openModal("myModal"); Self::Message::Update})}>{"Update"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {open_modal("myModal"); Self::Message::Update})}>{"Update"}</button>
                 </div>
             </div>
         }
@@ -173,10 +173,10 @@ impl Component for Main {
                 self.team_boards = Some(boards.unwrap());
             }
             Self::Message::UpdateBoard => {
-                let id = getValue("idBoard").parse::<i32>().unwrap();
-                let name = getValue("nameBoard");
+                let id = get_value("idBoard").parse::<i32>().unwrap();
+                let name = get_value("nameBoard");
                 let token = self.token.clone().unwrap();
-                let board_type = getValue("typeBoard");
+                let board_type = get_value("typeBoard");
                 ctx.link().send_future(async move {
                     let _ = update_board(&token, id, name, &board_type).await;
                     Self::Message::Return
@@ -231,7 +231,7 @@ impl Component for Main {
             <div id="myModal" class="modal">
 
             <div class="modal-content">
-                <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
+                <span class="close btn btn-danger" onclick={|_: MouseEvent| {hide_modal("myModal");}}>{"Hide"}</span>
                 <form>
                 <div class="form-group">
                     <label for="name">{"name"}</label>
