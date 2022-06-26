@@ -210,7 +210,7 @@ async fn new_list(
     };
     match List::create(list, &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        _ => Err(Status::NotFound),
+        Err(x) => {println!("{:?}", x);Err(Status::NotFound)},
     }
 }
 
@@ -488,3 +488,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+
+
+#[cfg(test)]
+mod test;

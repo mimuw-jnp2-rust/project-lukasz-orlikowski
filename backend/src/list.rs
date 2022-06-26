@@ -18,6 +18,7 @@ pub struct List {
 
 impl List {
     pub async fn create(list: List, connection: &Connection) -> QueryResult<usize> {
+        println!("{:?}", list);
         connection
             .run(|conn| diesel::insert_into(list::table).values(list).execute(conn))
             .await
