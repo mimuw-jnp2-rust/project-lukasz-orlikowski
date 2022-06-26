@@ -1,5 +1,3 @@
-
-
 use serde::{Deserialize, Serialize};
 use wasm_timer::{SystemTime, UNIX_EPOCH};
 use yew::Properties;
@@ -101,7 +99,7 @@ pub struct Task {
     pub points: i32,
     pub tags: String,
     pub done: i32,
-    pub milestone: Option<i32>
+    pub milestone: Option<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -113,7 +111,7 @@ pub struct TaskFilter {
     pub deadline_end: String,
     pub points_min: Option<i32>,
     pub points_max: Option<i32>,
-    pub tags: String
+    pub tags: String,
 }
 
 impl TaskFilter {
@@ -125,14 +123,12 @@ impl TaskFilter {
         set_value("deadlineEnd", self.deadline_end.clone().as_str());
         if self.points_min.is_some() {
             set_value("pointsMin", self.points_min.unwrap().to_string().as_str());
-        }
-        else {
+        } else {
             set_value("pointsMin", "");
         }
         if self.points_max.is_some() {
             set_value("pointsMin", self.points_max.unwrap().to_string().as_str());
-        }
-        else {
+        } else {
             set_value("pointsMin", "");
         }
         set_value("tagsFilter", self.tags.clone().as_str());
@@ -146,7 +142,7 @@ pub struct Timer {
     pub user_id: i32,
     pub status: String,
     pub time: u64,
-    pub start: Option<u64>
+    pub start: Option<u64>,
 }
 
 impl Timer {
@@ -156,9 +152,8 @@ impl Timer {
             let since_the_epoch = time
                 .duration_since(UNIX_EPOCH)
                 .expect("Time went backwards");
-            since_the_epoch.as_secs() + self.time  - self.start.unwrap() as u64
-        }
-        else {
+            since_the_epoch.as_secs() + self.time - self.start.unwrap() as u64
+        } else {
             self.time
         }
     }
@@ -166,19 +161,19 @@ impl Timer {
 
 #[derive(Serialize)]
 pub struct TimerData {
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
 pub struct IdProp {
-    pub id: i32
+    pub id: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Properties)]
 pub struct BoardProp {
     pub id: i32,
     pub board_type: String,
-    pub milestones: Option<Vec<Milestone>>
+    pub milestones: Option<Vec<Milestone>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -195,5 +190,5 @@ pub struct Log {
     pub deadline: String,
     pub subtasks: String,
     pub points: i32,
-    pub tags: String
+    pub tags: String,
 }

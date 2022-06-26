@@ -1,16 +1,19 @@
+use super::milestone::MilestoneList;
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{function_component, html, Component, Context, Html, MouseEvent, Properties};
-use super::milestone::MilestoneList;
 
 use super::navbar::Navbar;
 use crate::{
     api::{
-        create_list, create_task, delete_list, delete_task, get_lists, get_task, get_tasks,
-        update_task, get_logs, get_milestones,
+        create_list, create_task, delete_list, delete_task, get_lists, get_logs, get_milestones,
+        get_task, get_tasks, update_task,
     },
-    types::{List, Task, TaskFilter, Log, IdProp, Milestone},
-    utils::{get_parameter, get_value, hide_modal, map_token, open_modal, reload, set_value, map_result, set_checked, is_checked, err},
+    types::{IdProp, List, Log, Milestone, Task, TaskFilter},
+    utils::{
+        err, get_parameter, get_value, hide_modal, is_checked, map_result, map_token, open_modal,
+        reload, set_checked, set_value,
+    },
 };
 
 #[function_component(ListOptions)]
@@ -51,7 +54,7 @@ fn sub_tasks(SubTasksProps { subtasks }: &SubTasksProps) -> Html {
 
 struct Logs {
     token: Option<String>,
-    logs: Option<Vec<Log>>
+    logs: Option<Vec<Log>>,
 }
 
 pub enum MsgLogs {
@@ -70,10 +73,10 @@ impl Component for Logs {
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-            if let Self::Message::Update(Ok(logs)) = msg {
-                self.logs = Some(logs);
-            }
-            true
+        if let Self::Message::Update(Ok(logs)) = msg {
+            self.logs = Some(logs);
+        }
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -103,7 +106,7 @@ impl Component for Logs {
             </div>
         });
 
-        let id_prop = ctx.clone().props().id;
+        let id_prop = ctx.props().id;
         let id = format!("logs{}", id_prop);
         html! {
             <div id={id.clone()} class="modal">
@@ -129,7 +132,7 @@ pub enum MsgList {
     Return,
     UpdateTask(Option<i32>),
     DeleteList,
-    Pass
+    Pass,
 }
 
 impl Component for ListDetails {
@@ -212,17 +215,17 @@ impl Component for ListDetails {
                     set_value("listUpdate", task.list.to_string().as_str());
                     if task.milestone.is_none() {
                         set_value("milestoneUpdate", "None");
-                    }
-                    else {
-                        set_value("milestoneUpdate", task.milestone.unwrap().to_string().as_str());
+                    } else {
+                        set_value(
+                            "milestoneUpdate",
+                            task.milestone.unwrap().to_string().as_str(),
+                        );
                     }
                     Self::Message::Return
                 });
                 true
             }
-            Self::Message::Pass => {
-                false
-            }
+            Self::Message::Pass => false,
             _ => true,
         }
     }
@@ -297,9 +300,8 @@ pub enum Msg {
     AddTask,
     Filter,
     Reset,
-    UpdateMilestones(Result<Vec<Milestone>, Error>)
+    UpdateMilestones(Result<Vec<Milestone>, Error>),
 }
-
 
 impl Component for Board {
     type Message = Msg;
@@ -315,7 +317,7 @@ impl Component for Board {
             token: map_token(LocalStorage::get("Token")),
             error: false,
             filter: None,
-            milestones: None
+            milestones: None,
         }
     }
 
@@ -364,7 +366,7 @@ impl Component for Board {
                 let deadline = get_value("deadline");
                 let subtasks = get_value("subtasks");
                 let points = get_value("points").parse::<i32>();
-                let points = if points.is_err() {-1} else {points.unwrap()};
+                let points = if let Ok(points) = points { points } else { -1 };
                 let tags = get_value("tags");
                 let done = is_checked("done");
                 let milestone = map_result(get_value("milestone").parse::<i32>());
@@ -383,7 +385,7 @@ impl Component for Board {
                             points,
                             tags,
                             done,
-                            milestone
+                            milestone,
                         },
                     )
                     .await;
@@ -413,7 +415,7 @@ impl Component for Board {
                 let deadline = get_value("deadlineUpdate");
                 let subtasks = get_value("subtasksUpdate");
                 let points = get_value("pointsUpdate").parse::<i32>();
-                let points = if points.is_err() {-1} else {points.unwrap()};
+                let points = if let Ok(points) = points { points } else { -1 };
                 let tags = get_value("tagsUpdate");
                 let done = is_checked("doneUpdate");
                 let milestone = map_result(get_value("milestoneUpdate").parse::<i32>());
@@ -432,7 +434,7 @@ impl Component for Board {
                             points,
                             tags,
                             done,
-                            milestone
+                            milestone,
                         },
                     )
                     .await;
@@ -462,7 +464,7 @@ impl Component for Board {
                     deadline_end,
                     points_min,
                     points_max,
-                    tags
+                    tags,
                 };
                 self.filter = Some(filter);
                 self.lists = None;
@@ -492,12 +494,12 @@ impl Component for Board {
         if self.milestones.is_none() {
             let token = self.token.clone().unwrap();
             let board_type = self.board_type.clone();
-            let id = self.board_id.clone();
+            let id = self.board_id;
             ctx.link().send_future(async move {
                 let res = get_milestones(id, board_type, &token).await;
                 Self::Message::UpdateMilestones(res)
             });
-            return html! {}
+            return html! {};
         }
         let lists = self.lists.clone();
         let lists_clone = lists.clone();
@@ -513,8 +515,10 @@ impl Component for Board {
                             });
         let lists_options_copy = lists_options.clone();
         let milestone_options = self.milestones.clone();
-        let milestone_options = milestone_options.unwrap().into_iter().map(|milestone| html! {
-            <option value={milestone.id.unwrap().to_string()}>{milestone.name}</option>
+        let milestone_options = milestone_options.unwrap().into_iter().map(|milestone| {
+            html! {
+                <option value={milestone.id.unwrap().to_string()}>{milestone.name}</option>
+            }
         });
         let milestone_options_clone = milestone_options.clone();
         html! {
@@ -584,7 +588,7 @@ impl Component for Board {
                                 </select>
                         </div>
                         <div class="form-group">
-                            <input type="checkbox" id="done" name="Done" value="yes"/>  
+                            <input type="checkbox" id="done" name="Done" value="yes"/>
                             <label for="done">{"Done:"}</label>
                         </div>
                         <div class="form-group">
@@ -654,7 +658,7 @@ impl Component for Board {
                                 </select>
                     </div>
                     <div class="form-group">
-                            <input type="checkbox" id="doneUpdate" name="Done" value="yes"/>  
+                            <input type="checkbox" id="doneUpdate" name="Done" value="yes"/>
                             <label for="doneUpdate">{"Done:"}</label>
                     </div>
                     <div class="form-group">
@@ -715,7 +719,7 @@ impl Component for Board {
 
                 </div>
                 <div class="col-xs-6 vl"></div>
-                <MilestoneList id={self.board_id.clone()} board_type={self.board_type.clone()} milestones={self.milestones.clone()}/>  
+                <MilestoneList id={self.board_id} board_type={self.board_type.clone()} milestones={self.milestones.clone()}/>
             </div>
             </>
         }

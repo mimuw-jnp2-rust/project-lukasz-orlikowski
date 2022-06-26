@@ -1,19 +1,18 @@
 use super::navbar::Navbar;
-use crate::api::{get_timers, update_timer, delete_timer, create_timer};
+use crate::api::{create_timer, delete_timer, get_timers, update_timer};
 use crate::types::Timer;
-use crate::utils::{get_value, err};
+use crate::utils::{err, get_value};
 use crate::Route;
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
+use gloo_timers::callback::Interval;
 use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
-use gloo_timers::callback::{Interval};
-
 
 pub struct TimerList {
     token: Option<String>,
     timers: Option<Vec<Timer>>,
-    _clock_handle: Interval
+    _clock_handle: Interval,
 }
 
 pub enum Msg {
@@ -23,7 +22,7 @@ pub enum Msg {
     Res(Result<Vec<Timer>, Error>),
     UpdateTimer(i32),
     Delete(i32),
-    Ok
+    Ok,
 }
 
 impl Component for TimerList {
@@ -40,12 +39,12 @@ impl Component for TimerList {
             Ok(key) => Self {
                 token: Some(key),
                 timers: None,
-                _clock_handle
+                _clock_handle,
             },
             Err(_) => Self {
                 token: None,
                 timers: None,
-                _clock_handle
+                _clock_handle,
             },
         }
     }
@@ -64,15 +63,13 @@ impl Component for TimerList {
                 self.timers = Some(res);
                 true
             }
-            Self::Message::Update => {
-                true
-            }
+            Self::Message::Update => true,
             Self::Message::UpdateTimer(x) => {
                 ctx.link().send_future(async move {
                     let _ = update_timer(token.as_str(), x).await;
                     Self::Message::Ok
                 });
-               
+
                 false
             }
             Self::Message::Ok => {
@@ -104,11 +101,11 @@ impl Component for TimerList {
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self.token {
             None => html! { <Redirect<Route> to={Route::Login}/> },
-            _ => if self.timers.is_none() {
+            _ => {
+                if self.timers.is_none() {
                     ctx.link().send_message(Self::Message::Fetch);
                     html! {}
-                }
-                else {
+                } else {
                     let timers = self.timers.clone();
                     let timers = timers.unwrap().into_iter().map(|timer| html! {
                         <div class="card" style="width: 18rem;">
@@ -125,7 +122,7 @@ impl Component for TimerList {
                             </div>
                         </div>
                     });
-            
+
                     html! {
                         <div>
                             <Navbar />
@@ -142,7 +139,7 @@ impl Component for TimerList {
                         </div>
                     }
                 }
+            }
         }
     }
-
 }

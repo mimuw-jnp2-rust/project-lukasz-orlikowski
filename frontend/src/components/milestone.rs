@@ -6,14 +6,13 @@ use gloo_storage::{LocalStorage, Storage};
 use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
 
-
 pub struct MilestoneList {
     token: Option<String>,
 }
 
 pub enum Msg {
     Submit,
-    Ok
+    Ok,
 }
 
 impl Component for MilestoneList {
@@ -23,12 +22,8 @@ impl Component for MilestoneList {
     fn create(_ctx: &Context<Self>) -> Self {
         let token = LocalStorage::get("Token");
         match token {
-            Ok(key) => Self {
-                token: Some(key),
-            },
-            Err(_) => Self {
-                token: None,
-            },
+            Ok(key) => Self { token: Some(key) },
+            Err(_) => Self { token: None },
         }
     }
 
@@ -40,7 +35,7 @@ impl Component for MilestoneList {
                     id: None,
                     name: get_value("nameMilestone"),
                     board_id: ctx.props().id,
-                    board_type: ctx.props().board_type.clone()
+                    board_type: ctx.props().board_type.clone(),
                 };
                 ctx.link().send_future(async move {
                     let _ = create_milestone(&token, milestone).await;
@@ -49,9 +44,7 @@ impl Component for MilestoneList {
                 });
                 false
             }
-            Self::Message::Ok => {
-                true
-            }
+            Self::Message::Ok => true,
         }
     }
 
@@ -59,8 +52,8 @@ impl Component for MilestoneList {
         match self.token {
             None => html! { <Redirect<Route> to={Route::Login}/> },
             _ => {
-                    let milestones = ctx.props().milestones.clone();
-                    let milestones = milestones.unwrap().into_iter().map(|milestone| html! {
+                let milestones = ctx.props().milestones.clone();
+                let milestones = milestones.unwrap().into_iter().map(|milestone| html! {
                         <div class="card" style="width: 18rem;">
                             <div class="card-body">
                                 <h5 class="card-title">{milestone.name}</h5>
@@ -69,23 +62,22 @@ impl Component for MilestoneList {
                             </div>
                         </div>
                     });
-                    html! {
-                        <div>
-                            <div class="col-xs-6" style="padding-left: 80px;">
-                                <h1>{"Milestones"}</h1>
-                                {for milestones}
-                                <form>
-                                    <div class="form-group">
-                                        <label for="nameMilestone">{"Name"}</label>
-                                        <input type="text" class="form-control" id="nameMilestone" aria-describedby="emailHelp" placeholder="Enter name"/>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::Submit})}>{"Submit"}</button>
-                                </form>
-                            </div>
+                html! {
+                    <div>
+                        <div class="col-xs-6" style="padding-left: 80px;">
+                            <h1>{"Milestones"}</h1>
+                            {for milestones}
+                            <form>
+                                <div class="form-group">
+                                    <label for="nameMilestone">{"Name"}</label>
+                                    <input type="text" class="form-control" id="nameMilestone" aria-describedby="emailHelp" placeholder="Enter name"/>
+                                </div>
+                                <button type="submit" class="btn btn-primary" onclick={ctx.link().callback(|e: MouseEvent| {e.prevent_default(); Msg::Submit})}>{"Submit"}</button>
+                            </form>
                         </div>
-                    }
+                    </div>
                 }
+            }
         }
     }
-
 }

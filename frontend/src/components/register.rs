@@ -41,12 +41,16 @@ impl Component for RegisterForm {
             }
             _ => {
                 self.error = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Login}/> };
+        }
         html! {
             <div class="d-flex justify-content-md-center align-items-center vh-100">
                 <div>

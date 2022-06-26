@@ -1,4 +1,4 @@
-use std::{num::ParseIntError};
+use std::num::ParseIntError;
 
 use gloo_net::Error;
 use gloo_storage::errors::StorageError;
@@ -26,7 +26,7 @@ pub fn map_token(token: Result<String, StorageError>) -> Option<String> {
 pub fn map_result(result: Result<i32, ParseIntError>) -> Option<i32> {
     match result {
         Ok(res) => Some(res),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 
@@ -87,7 +87,7 @@ extern "C" {
  }")]
 
 extern "C" {
-pub fn set_checked(input: &str) -> bool;
+    pub fn set_checked(input: &str) -> bool;
 }
 
 #[wasm_bindgen(inline_js = "export function is_checked(input) { 
@@ -101,15 +101,22 @@ pub fn set_checked(input: &str) -> bool;
  }")]
 
 extern "C" {
-pub fn is_checked(input: &str) -> i32;
+    pub fn is_checked(input: &str) -> i32;
 }
-
 
 #[wasm_bindgen(inline_js = "export function err(input) { 
     alert(input);
     return true;
  }")]
 
- extern "C" {
+extern "C" {
     pub fn err(input: &str) -> bool;
+}
+
+#[wasm_bindgen(inline_js = "export function get_backend() { 
+    return window.location.origin + \"/api/\";
+ }")]
+
+extern "C" {
+    pub fn get_backend() -> String;
 }

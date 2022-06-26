@@ -87,13 +87,16 @@ impl Component for TeamBoardCreate {
             }
             _ => {
                 self.error = true;
-                self.success = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Main}/> };
+        }
         if self.teams.is_none() {
             ctx.link().send_message(Self::Message::Fetch);
             html! {}

@@ -35,7 +35,7 @@ enum Route {
     TimerList,
     #[not_found]
     #[at("/")]
-    NotFound
+    NotFound,
 }
 
 #[function_component(App)]
@@ -57,7 +57,7 @@ fn switch(routes: &Route) -> Html {
         Route::TeamBoardCreate => html!(<TeamBoardCreate />),
         Route::Board => html!(<Board />),
         Route::TimerList => html!(<TimerList />),
-        Route::NotFound => html!(<Main />)
+        Route::NotFound => html!(<Main />),
     }
 }
 

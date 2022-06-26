@@ -116,7 +116,7 @@ impl Component for PrivateDetails {
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
                     <h5 class="card-title">{&ctx.props().name}</h5>
-                    <a href={"board?board_type=private&&id=".to_owned() + ctx.props().id.unwrap().to_string().as_str()} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
+                    <a href={format!("board?board_type=private&&id={}",ctx.props().id.unwrap())} class="btn btn-primary" role="button" aria-pressed="true">{"Open"}</a>
                     <button class="btn btn-danger" onclick={ctx.link().callback(|_: MouseEvent| {Self::Message::Delete})}>{"Delete"}</button>
                     <button class="btn btn-primary" onclick={ctx.link().callback(|_: MouseEvent| {open_modal("myModal"); Self::Message::Update})}>{"Update"}</button>
                 </div>

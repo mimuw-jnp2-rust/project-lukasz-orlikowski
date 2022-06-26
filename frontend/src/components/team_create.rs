@@ -51,13 +51,16 @@ impl Component for TeamCreate {
             }
             _ => {
                 self.error = true;
-                self.success = true;
+                self.success = false;
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.success {
+            return html! { <Redirect<Route> to={Route::Main}/> };
+        }
         match self.token {
             None => html! { <Redirect<Route> to={Route::Login}/> },
             _ => html! {
