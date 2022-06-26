@@ -68,3 +68,15 @@ docker-compose build
 docker-compose up
 ```
 Stworzy on oba serwery (frontend i backend). Powinien działać dobrze, ale testowałem głównie bez dockera, więc w razie problemów z dockerem należy skorzystać z wersji bez docker na branchu main.
+
+## Co udało się zrealizować w drugiej części?
+
+Udało się zrealizować zamierzone funkcjonalności na drugą część zadania oraz dodać trochę unit testów. Niestety nie udało się wprowadzić wszystkich zmian z review z powodu braku czasu.
+
+Jeżeli chodzi o odpalanie aplikacji nie zmieniło się nic względem pierwszej części zadania.
+
+Jeżeli chodzi o unit testy, to nie znalazłem sposobu jak można przygotowywać pod nie środowisko zewnętrzne (to znaczy jak z poziomu Rusta odpalać przed testami jakiś kod konfiguracyjny). W związku z tym migracje bazy danych nie są wkomponowane w testy. Powoduje to w szczególności, że trzeba samemu przygotować bazę danych przed uruchomieniem testów. Przykładowy sposób:
+- Skopiować plik z bazą danych (właściwy z serwera) w inne miejsce.
+- Odpalić backend za pomocą cargo run (odpali migracje)
+- Zakończyć proces backendu i uruchomić cargo test
+
