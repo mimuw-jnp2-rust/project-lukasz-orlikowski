@@ -4,13 +4,13 @@ use board::{PrivateBoard, TeamBoard};
 use db::Connection;
 use list::List;
 use log::Log;
-use milestone::{MilestoneResponse, Milestone};
+use milestone::{Milestone, MilestoneResponse};
 use rocket::futures::future::join_all;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use team::Team;
 use timer::Timer;
-use types::{Credentials, TokenResponse, TimerData, TaskFilter};
+use types::{Credentials, TaskFilter, TimerData, TokenResponse};
 use utils::get_time;
 
 use self::auth::crypto::sha2::Sha256;
@@ -18,19 +18,19 @@ use self::auth::jwt::{Header, Registered, Token};
 use task::Task;
 use user::User;
 
-pub mod utils;
-pub mod milestone;
 pub mod auth;
 pub mod board;
 pub mod db;
 pub mod list;
+pub mod log;
+pub mod milestone;
 pub mod schema;
 pub mod task;
 pub mod team;
+pub mod timer;
 pub mod types;
 pub mod user;
-pub mod timer;
-pub mod log;
+pub mod utils;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
@@ -188,11 +188,7 @@ async fn get_team_boards(
 }
 
 #[get("/logs/get/<id>")]
-async fn get_logs(
-    id: i32,
-    connection: Connection,
-    key: ApiKey,
-) -> Result<Json<Vec<Log>>, Status> {
+async fn get_logs(id: i32, connection: Connection, _key: ApiKey) -> Result<Json<Vec<Log>>, Status> {
     match Log::get(id, &connection).await {
         Ok(logs) => Ok(Json(logs)),
         _ => Err(Status::NotFound),
@@ -210,7 +206,10 @@ async fn new_list(
     };
     match List::create(list, &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        Err(x) => {println!("{:?}", x);Err(Status::NotFound)},
+        Err(x) => {
+            println!("{:?}", x);
+            Err(Status::NotFound)
+        }
     }
 }
 
@@ -239,7 +238,7 @@ async fn get_tasks(
     }
 }
 
-#[post("/task/get/<id>", data="<data>")]
+#[post("/task/get/<id>", data = "<data>")]
 async fn filter_tasks(
     id: i32,
     data: Json<TaskFilter>,
@@ -357,37 +356,51 @@ async fn delete_list(id: i32, connection: Connection, _ket: ApiKey) -> Result<Js
 }
 
 #[post("/timer/create", data = "<data>")]
-async fn timer_create(data: Json<TimerData>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+async fn timer_create(
+    data: Json<TimerData>,
+    connection: Connection,
+    key: ApiKey,
+) -> Result<Json<bool>, Status> {
     let user_id = User::get_username_id(key.0, &connection).await;
     if user_id.is_none() {
         return Err(Status::NotFound);
     }
     let name = data.into_inner().name;
     let time = get_time();
-    let timer = Timer { id: None, name, user_id: user_id.unwrap(), status: "active".to_owned(), time: 0, start: Some(time)};
+    let timer = Timer {
+        id: None,
+        name,
+        user_id: user_id.unwrap(),
+        status: "active".to_owned(),
+        time: 0,
+        start: Some(time),
+    };
     match Timer::create(timer, &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        Err(x) => {println!("{:?}", x); Err(Status::NotFound)}
+        Err(x) => {
+            println!("{:?}", x);
+            Err(Status::NotFound)
+        }
     }
 }
 
 #[get("/timer/delete/<id>")]
-async fn timer_delete(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+async fn timer_delete(id: i32, connection: Connection, _key: ApiKey) -> Result<Json<bool>, Status> {
     match Timer::delete(id, &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        _ => Err(Status::NotFound)
+        _ => Err(Status::NotFound),
     }
 }
 
 #[get("/timer/update/<id>")]
-async fn timer_update(id: i32, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+async fn timer_update(id: i32, connection: Connection, _key: ApiKey) -> Result<Json<bool>, Status> {
     let timer = Timer::get_by_id(id, &connection).await;
     if timer.is_err() {
         return Err(Status::NotFound);
     }
     match Timer::update(timer.unwrap(), &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        _ => Err(Status::NotFound)
+        _ => Err(Status::NotFound),
     }
 }
 
@@ -399,23 +412,32 @@ async fn get_timers(connection: Connection, key: ApiKey) -> Result<Json<Vec<Time
     }
     match Timer::get_timers(user_id.unwrap(), &connection).await {
         Ok(timers) => Ok(Json(timers)),
-        _ => Err(Status::NotFound)
+        _ => Err(Status::NotFound),
     }
 }
 
 #[get("/milestone/get/<id>/<board_type>")]
-async fn get_milestones(id: i32, board_type: String, connection: Connection, key: ApiKey) -> Result<Json<Vec<MilestoneResponse>>, Status> {
+async fn get_milestones(
+    id: i32,
+    board_type: String,
+    connection: Connection,
+    _key: ApiKey,
+) -> Result<Json<Vec<MilestoneResponse>>, Status> {
     match Milestone::get(id, board_type, &connection).await {
         Ok(milestones) => Ok(Json(milestones)),
-        _ => Err(Status::NotFound)
+        _ => Err(Status::NotFound),
     }
 }
 
 #[post("/milestone/create", data = "<data>")]
-async fn milestone_create(data: Json<Milestone>, connection: Connection, key: ApiKey) -> Result<Json<bool>, Status> {
+async fn milestone_create(
+    data: Json<Milestone>,
+    connection: Connection,
+    _key: ApiKey,
+) -> Result<Json<bool>, Status> {
     match Milestone::create(data.into_inner(), &connection).await {
         Ok(cnt) => Ok(Json(cnt > 0)),
-        Err(x) => {Err(Status::NotFound)}
+        Err(_) => Err(Status::NotFound),
     }
 }
 
@@ -488,7 +510,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
 
 #[cfg(test)]
 mod test;

@@ -6,7 +6,6 @@ use diesel::Insertable;
 use diesel::Queryable;
 use rocket::serde::{Deserialize, Serialize};
 
-#[allow(clippy::all)]
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug)]
 #[table_name = "list"]
 pub struct List {

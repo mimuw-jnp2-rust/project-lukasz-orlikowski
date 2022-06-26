@@ -1,18 +1,14 @@
-use super::navbar::Navbar;
-use crate::api::{create_private_board, get_timers, update_timer, delete_timer, create_timer, get_milestones, create_milestone};
-use crate::types::{Timer, Milestone, BoardProp, MilestoneCreate};
-use crate::utils::{getValue, reload};
+use crate::api::create_milestone;
+use crate::types::{BoardProp, MilestoneCreate};
+use crate::utils::{get_value, reload};
 use crate::Route;
-use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
 use yew::{html, Component, Context, Html, MouseEvent};
 use yew_router::prelude::*;
-use gloo_timers::callback::{Interval};
 
 
 pub struct MilestoneList {
     token: Option<String>,
-    milestones: Option<Vec<Milestone>>,
 }
 
 pub enum Msg {
@@ -24,16 +20,14 @@ impl Component for MilestoneList {
     type Message = Msg;
     type Properties = BoardProp;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         let token = LocalStorage::get("Token");
         match token {
             Ok(key) => Self {
                 token: Some(key),
-                milestones: None,
             },
             Err(_) => Self {
                 token: None,
-                milestones: None,
             },
         }
     }
@@ -44,7 +38,7 @@ impl Component for MilestoneList {
             Self::Message::Submit => {
                 let milestone = MilestoneCreate {
                     id: None,
-                    name: getValue("nameMilestone"),
+                    name: get_value("nameMilestone"),
                     board_id: ctx.props().id,
                     board_type: ctx.props().board_type.clone()
                 };
@@ -57,9 +51,6 @@ impl Component for MilestoneList {
             }
             Self::Message::Ok => {
                 true
-            }
-            _ => {
-                false
             }
         }
     }

@@ -10,7 +10,7 @@ use crate::{
         update_task, get_logs, get_milestones,
     },
     types::{List, Task, TaskFilter, Log, IdProp, Milestone},
-    utils::{getParameter, getValue, hideModal, map_token, openModal, reload, setValue, map_result, set_checked, is_checked},
+    utils::{get_parameter, get_value, hide_modal, map_token, open_modal, reload, set_value, map_result, set_checked, is_checked, err},
 };
 
 #[function_component(ListOptions)]
@@ -69,7 +69,7 @@ impl Component for Logs {
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
             if let Self::Message::Update(Ok(logs)) = msg {
                 self.logs = Some(logs);
             }
@@ -96,7 +96,7 @@ impl Component for Logs {
                     <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{log.place.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{log.members.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{log.deadline}</h6>
-                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{log.points}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{if log.points >= 0 {log.points.to_string()} else {"".to_string()}}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Tags:"}{log.tags}</h6>
                     <SubTasks subtasks={log.subtasks.clone()}/>
                 </div>
@@ -109,7 +109,7 @@ impl Component for Logs {
             <div id={id.clone()} class="modal">
 
                 <div class="modal-content">
-                    <span class="close btn btn-danger" onclick={move |_: MouseEvent| {hideModal(id.as_str());}}>{"Hide"}</span>
+                    <span class="close btn btn-danger" onclick={move |_: MouseEvent| {hide_modal(id.as_str());}}>{"Hide"}</span>
                     {for logs}
                 </div>
             </div>
@@ -179,40 +179,42 @@ impl Component for ListDetails {
                     }
                     let task = task.unwrap();
 
-                    setValue("idUpdate", id.unwrap().to_string().as_str());
-                    setValue("nameUpdateTask", task.name.as_str());
-                    setValue("pointsUpdate", task.points.to_string().as_str());
-                    setValue("tagsUpdate", task.tags.as_str());
+                    set_value("idUpdate", id.unwrap().to_string().as_str());
+                    set_value("nameUpdateTask", task.name.as_str());
+                    if task.points >= 0 {
+                        set_value("pointsUpdate", task.points.to_string().as_str());
+                    }
+                    set_value("tagsUpdate", task.tags.as_str());
                     if task.done == 1 {
                         set_checked("doneUpdate");
                     }
 
                     if task.note.is_some() {
-                        setValue("noteUpdate", task.note.unwrap().as_str());
+                        set_value("noteUpdate", task.note.unwrap().as_str());
                     } else {
-                        setValue("noteUpdate", "");
+                        set_value("noteUpdate", "");
                     }
 
                     if task.place.is_some() {
-                        setValue("placeUpdate", task.place.unwrap().as_str());
+                        set_value("placeUpdate", task.place.unwrap().as_str());
                     } else {
-                        setValue("placeUpdate", "");
+                        set_value("placeUpdate", "");
                     }
 
                     if task.members.is_some() {
-                        setValue("membersUpdate", task.members.unwrap().as_str());
+                        set_value("membersUpdate", task.members.unwrap().as_str());
                     } else {
-                        setValue("membersUpdate", "");
+                        set_value("membersUpdate", "");
                     }
 
-                    setValue("deadlineUpdate", task.deadline.as_str());
+                    set_value("deadlineUpdate", task.deadline.as_str());
 
-                    setValue("listUpdate", task.list.to_string().as_str());
+                    set_value("listUpdate", task.list.to_string().as_str());
                     if task.milestone.is_none() {
-                        setValue("milestoneUpdate", "None");
+                        set_value("milestoneUpdate", "None");
                     }
                     else {
-                        setValue("milestoneUpdate", task.milestone.unwrap().to_string().as_str());
+                        set_value("milestoneUpdate", task.milestone.unwrap().to_string().as_str());
                     }
                     Self::Message::Return
                 });
@@ -245,21 +247,17 @@ impl Component for ListDetails {
                     <h6 class="card-subtitle mb-2 text-muted">{"Place:"}{task.place.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Assigned:"}{task.members.unwrap()}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Deadline:"}{task.deadline}</h6>
-                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{task.points}</h6>
+                    <h6 class="card-subtitle mb-2 text-muted">{"Points:"}{if task.points >= 0 {task.points.to_string()} else {"".to_string()}}</h6>
                     <h6 class="card-subtitle mb-2 text-muted">{"Tags:"}{task.tags}</h6>
                     <SubTasks subtasks={task.subtasks.clone()}/>
                     <Logs id={task.id.unwrap()}/>
                     <button class="btn btn-danger" onclick={ctx.link().callback(move |_: MouseEvent| {Self::Message::Delete(task.id)})}>{"Delete"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
-                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {openModal(format!("logs{}", task.id.unwrap()).as_str()); Self::Message::Pass})}>{"Show logs"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {open_modal("taskUpdate"); Self::Message::UpdateTask(task.id)})}>{"Update"}</button>
+                    <button class="btn btn-primary" onclick={ctx.link().callback(move |_: MouseEvent| {open_modal(format!("logs{}", task.id.unwrap()).as_str()); Self::Message::Pass})}>{"Show logs"}</button>
                 </div>
             </div>
         });
 
-        //let lists_options = ctx.props().lists.clone();
-        //let lists_options = lists_options.unwrap().into_iter().map(|list| html! {
-        //                      <ListOptions name={list.name.clone()} board={list.board.clone()} board_type={list.board_type.clone()} id={list.id.clone()} />
-        //                });
         html! {
             <>
                 <div class="col-xs-6" style="padding-left: 80px;">
@@ -308,8 +306,8 @@ impl Component for Board {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let board_type = getParameter("board_type");
-        let board_id = getParameter("id").parse::<i32>().unwrap();
+        let board_type = get_parameter("board_type");
+        let board_id = get_parameter("id").parse::<i32>().unwrap();
         Self {
             board_type,
             board_id,
@@ -324,7 +322,7 @@ impl Component for Board {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Self::Message::Submit => {
-                let name = getValue("name");
+                let name = get_value("name");
                 let board = self.board_id;
                 let board_type = self.board_type.clone();
                 let token = self.token.clone().unwrap();
@@ -352,18 +350,24 @@ impl Component for Board {
                 true
             }
             Self::Message::AddTask => {
-                let name = getValue("nameTask");
-                let note = getValue("note");
-                let place = getValue("place");
-                let members = getValue("members");
-                let list = getValue("list").parse::<i32>().unwrap();
+                let name = get_value("nameTask");
+                let note = get_value("note");
+                let place = get_value("place");
+                let members = get_value("members");
+                let list = get_value("list").parse::<i32>();
+                if list.is_err() {
+                    err("Please select list");
+                    return false;
+                }
+                let list = list.unwrap();
                 let token = self.token.clone().unwrap();
-                let deadline = getValue("deadline");
-                let subtasks = getValue("subtasks");
-                let points = getValue("points").parse::<i32>().unwrap();
-                let tags = getValue("tags");
+                let deadline = get_value("deadline");
+                let subtasks = get_value("subtasks");
+                let points = get_value("points").parse::<i32>();
+                let points = if points.is_err() {-1} else {points.unwrap()};
+                let tags = get_value("tags");
                 let done = is_checked("done");
-                let milestone = map_result(getValue("milestone").parse::<i32>());
+                let milestone = map_result(get_value("milestone").parse::<i32>());
                 ctx.link().send_future(async move {
                     let res = create_task(
                         &token,
@@ -383,6 +387,7 @@ impl Component for Board {
                         },
                     )
                     .await;
+                    let _ = reload();
                     Self::Message::Res(res)
                 });
                 false
@@ -394,18 +399,24 @@ impl Component for Board {
             }
             Self::Message::UpdateTaskSubmit => {
                 let token = self.token.clone().unwrap();
-                let name = getValue("nameUpdateTask");
-                let note = getValue("noteUpdate");
-                let place = getValue("placeUpdate");
-                let members = getValue("membersUpdate");
-                let list = getValue("listUpdate").parse::<i32>().unwrap();
-                let id = getValue("idUpdate").parse::<i32>().unwrap();
-                let deadline = getValue("deadlineUpdate");
-                let subtasks = getValue("subtasksUpdate");
-                let points = getValue("pointsUpdate").parse::<i32>().unwrap();
-                let tags = getValue("tagsUpdate");
+                let name = get_value("nameUpdateTask");
+                let note = get_value("noteUpdate");
+                let place = get_value("placeUpdate");
+                let members = get_value("membersUpdate");
+                let list = get_value("listUpdate").parse::<i32>();
+                if list.is_err() {
+                    err("Please select list for task");
+                    return false;
+                }
+                let list = list.unwrap();
+                let id = get_value("idUpdate").parse::<i32>().unwrap();
+                let deadline = get_value("deadlineUpdate");
+                let subtasks = get_value("subtasksUpdate");
+                let points = get_value("pointsUpdate").parse::<i32>();
+                let points = if points.is_err() {-1} else {points.unwrap()};
+                let tags = get_value("tagsUpdate");
                 let done = is_checked("doneUpdate");
-                let milestone = map_result(getValue("milestoneUpdate").parse::<i32>());
+                let milestone = map_result(get_value("milestoneUpdate").parse::<i32>());
                 ctx.link().send_future(async move {
                     let res = update_task(
                         &token,
@@ -425,6 +436,7 @@ impl Component for Board {
                         },
                     )
                     .await;
+                    let _ = reload();
                     Self::Message::Res(res)
                 });
                 false
@@ -434,14 +446,14 @@ impl Component for Board {
                 true
             }
             Self::Message::Filter => {
-                let name = getValue("nameTaskFilter");
-                let place = getValue("placeFilter");
-                let members = getValue("membersFilter");
-                let deadline_start = getValue("deadlineStart");
-                let deadline_end = getValue("deadlineEnd");
-                let points_min = map_result(getValue("pointsMin").parse::<i32>());
-                let points_max = map_result(getValue("pointsMax").parse::<i32>());
-                let tags = getValue("tagsFilter");
+                let name = get_value("nameTaskFilter");
+                let place = get_value("placeFilter");
+                let members = get_value("membersFilter");
+                let deadline_start = get_value("deadlineStart");
+                let deadline_end = get_value("deadlineEnd");
+                let points_min = map_result(get_value("pointsMin").parse::<i32>());
+                let points_max = map_result(get_value("pointsMax").parse::<i32>());
+                let tags = get_value("tagsFilter");
                 let filter = TaskFilter {
                     name,
                     place,
@@ -524,13 +536,13 @@ impl Component for Board {
                     }
                 </div>
                 <div class="col-xs-6" style="padding-left: 80px;">
-                    <button class="btn btn-primary" id="myBtn" onclick={|_: MouseEvent| {openModal("myModal");}} >{"Add task"}</button>
-                    <button class="btn btn-primary" id="myBtnFilter" onclick={move |_: MouseEvent| {if filter.clone().is_some() {filter.clone().unwrap().set_filters();} openModal("filterModal");}} >{"Filter tasks"}</button>
+                    <button class="btn btn-primary" id="myBtn" onclick={|_: MouseEvent| {open_modal("myModal");}} >{"Add task"}</button>
+                    <button class="btn btn-primary" id="myBtnFilter" onclick={move |_: MouseEvent| {if filter.clone().is_some() {filter.clone().unwrap().set_filters();} open_modal("filterModal");}} >{"Filter tasks"}</button>
                     <button class="btn btn-danger" id="myBtnReset" onclick={ctx.link().callback(|_: MouseEvent| {Msg::Reset})}>{"Reset filters"}</button>
                     <div id="myModal" class="modal">
 
                     <div class="modal-content">
-                        <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("myModal");}}>{"Hide"}</span>
+                        <span class="close btn btn-danger" onclick={|_: MouseEvent| {hide_modal("myModal");}}>{"Hide"}</span>
                         <form>
                         <div class="form-group">
                             <label for="name">{"name"}</label>
@@ -593,7 +605,7 @@ impl Component for Board {
                 <div id="taskUpdate" class="modal">
 
                 <div class="modal-content">
-                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("taskUpdate");}}>{"Hide"}</span>
+                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hide_modal("taskUpdate");}}>{"Hide"}</span>
                     <form>
                     <div class="form-group">
                         <label for="name">{"name"}</label>
@@ -657,7 +669,7 @@ impl Component for Board {
                 <div id="filterModal" class="modal">
 
                 <div class="modal-content">
-                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hideModal("filterModal");}}>{"Hide"}</span>
+                    <span class="close btn btn-danger" onclick={|_: MouseEvent| {hide_modal("filterModal");}}>{"Hide"}</span>
                     <form>
                     <div class="form-group">
                         <label for="nameTaskFilter">{"name contains"}</label>

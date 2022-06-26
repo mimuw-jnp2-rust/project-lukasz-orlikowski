@@ -15,7 +15,7 @@ pub fn get_date() -> String {
     format!("{}", local)
 }
 
-pub fn matches(x: Option<i32>, y: i32) -> bool{
+pub fn matches(x: Option<i32>, y: i32) -> bool {
     x.is_some() && x.unwrap() == y
 }
 
@@ -24,7 +24,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_matches()  {
+    fn test_matches() {
         assert!(matches(Some(10), 10));
         assert!(!matches(Some(10), 11));
         assert!(!matches(None, 10));

@@ -1,7 +1,7 @@
 use super::navbar::Navbar;
-use crate::api::{create_private_board, get_timers, update_timer, delete_timer, create_timer};
+use crate::api::{get_timers, update_timer, delete_timer, create_timer};
 use crate::types::Timer;
-use crate::utils::{getValue};
+use crate::utils::{get_value, err};
 use crate::Route;
 use gloo_net::Error;
 use gloo_storage::{LocalStorage, Storage};
@@ -13,7 +13,7 @@ use gloo_timers::callback::{Interval};
 pub struct TimerList {
     token: Option<String>,
     timers: Option<Vec<Timer>>,
-    clock_handle: Interval
+    _clock_handle: Interval
 }
 
 pub enum Msg {
@@ -32,7 +32,7 @@ impl Component for TimerList {
 
     fn create(ctx: &Context<Self>) -> Self {
         let token = LocalStorage::get("Token");
-        let clock_handle = {
+        let _clock_handle = {
             let link = ctx.link().clone();
             Interval::new(1000, move || link.send_message(Self::Message::Update))
         };
@@ -40,12 +40,12 @@ impl Component for TimerList {
             Ok(key) => Self {
                 token: Some(key),
                 timers: None,
-                clock_handle
+                _clock_handle
             },
             Err(_) => Self {
                 token: None,
                 timers: None,
-                clock_handle
+                _clock_handle
             },
         }
     }
@@ -69,7 +69,7 @@ impl Component for TimerList {
             }
             Self::Message::UpdateTimer(x) => {
                 ctx.link().send_future(async move {
-                    update_timer(token.as_str(), x).await;
+                    let _ = update_timer(token.as_str(), x).await;
                     Self::Message::Ok
                 });
                
@@ -81,21 +81,21 @@ impl Component for TimerList {
             }
             Self::Message::Delete(x) => {
                 ctx.link().send_future(async move {
-                    delete_timer(token.as_str(), x).await;
+                    let _ = delete_timer(token.as_str(), x).await;
                     Self::Message::Ok
                 });
                 false
             }
             Self::Message::Submit => {
-                let name = getValue("name");
+                let name = get_value("name");
                 ctx.link().send_future(async move {
-                    create_timer(token.as_str(), name.as_str()).await;
+                    let _ = create_timer(token.as_str(), name.as_str()).await;
                     Self::Message::Ok
                 });
                 false
             }
             _ => {
-                // TODO alert on error
+                let _ = err("Error occured");
                 false
             }
         }

@@ -18,6 +18,9 @@ pub fn app() -> Html {
             <li class="nav-item">
               <a class="nav-link" href="/team_board/create">{"Add team board"}</a>
             </li>
+            <li class="nav-item">
+            <a class="nav-link" href="/timers">{"Timers"}</a>
+          </li>
           </ul>
         </div>
       </nav>

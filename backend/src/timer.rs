@@ -1,5 +1,5 @@
-use crate::schema::timer;
 use crate::db::Connection;
+use crate::schema::timer;
 use crate::utils::get_time;
 use diesel::prelude::*;
 use diesel::AsChangeset;
@@ -15,7 +15,7 @@ pub struct Timer {
     pub user_id: i32,
     pub status: String,
     pub time: i32,
-    pub start: Option<i32>
+    pub start: Option<i32>,
 }
 
 impl Timer {
@@ -30,34 +30,48 @@ impl Timer {
     }
 
     pub async fn update(timer: Timer, connection: &Connection) -> QueryResult<usize> {
-        let status = if timer.status == "active" {"stopped"} else {"active"};
-        let time = if timer.status == "active" {timer.time + get_time() - timer.start.unwrap()} else {timer.time};
+        let status = if timer.status == "active" {
+            "stopped"
+        } else {
+            "active"
+        };
+        let time = if timer.status == "active" {
+            timer.time + get_time() - timer.start.unwrap()
+        } else {
+            timer.time
+        };
         connection
-        .run(move |conn| {
-            diesel::update(timer::table.filter(timer::id.eq(timer.id)))
-                .set((timer::status.eq(status), timer::time.eq(time), timer::start.eq(get_time())))
-                .execute(conn)
-        })
-        .await
+            .run(move |conn| {
+                diesel::update(timer::table.filter(timer::id.eq(timer.id)))
+                    .set((
+                        timer::status.eq(status),
+                        timer::time.eq(time),
+                        timer::start.eq(get_time()),
+                    ))
+                    .execute(conn)
+            })
+            .await
     }
 
     pub async fn get_timers(user_id: i32, connection: &Connection) -> QueryResult<Vec<Timer>> {
         connection
-            .run(move |conn| timer::table.filter(timer::user_id.eq(user_id)).load::<Timer>(conn))
+            .run(move |conn| {
+                timer::table
+                    .filter(timer::user_id.eq(user_id))
+                    .load::<Timer>(conn)
+            })
             .await
     }
 
     pub async fn get_by_id(id: i32, connection: &Connection) -> QueryResult<Timer> {
         connection
-        .run(move |conn| timer::table.filter(timer::id.eq(id)).first(conn))
-        .await
+            .run(move |conn| timer::table.filter(timer::id.eq(id)).first(conn))
+            .await
     }
 
     pub async fn delete(id: i32, connection: &Connection) -> QueryResult<usize> {
         connection
-        .run(move |conn| {
-            diesel::delete(timer::table.filter(timer::id.eq(id))).execute(conn)
-        })
-        .await
+            .run(move |conn| diesel::delete(timer::table.filter(timer::id.eq(id))).execute(conn))
+            .await
     }
 }

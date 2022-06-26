@@ -64,10 +64,9 @@ pub struct BoardUpdate {
     pub name: String,
 }
 
-
 #[derive(Deserialize, Serialize)]
 pub struct TimerData {
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -79,17 +78,16 @@ pub struct TaskFilter {
     pub deadline_end: String,
     pub points_min: Option<i32>,
     pub points_max: Option<i32>,
-    pub tags: String
+    pub tags: String,
 }
 
 #[cfg(test)]
 mod tests {
-    use rocket::http::hyper::Response;
 
     use super::*;
 
     #[test]
-    fn test_token_response()  {
+    fn test_token_response() {
         let response = TokenResponse::new(true, "a".to_string());
         assert_eq!(response.token, "a");
         assert!(response.success);

@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use crate::db::Connection;
 use crate::log::Log;
 use crate::schema::task;
@@ -18,7 +16,7 @@ no_arg_sql_function!(
 
 #[derive(Serialize, Deserialize, Queryable, Insertable, AsChangeset, Debug, Clone)]
 #[table_name = "task"]
-#[changeset_options(treat_none_as_null="true")]
+#[changeset_options(treat_none_as_null = "true")]
 pub struct Task {
     pub id: Option<i32>,
     pub name: String,
@@ -31,18 +29,23 @@ pub struct Task {
     pub points: i32,
     pub tags: String,
     pub done: i32, // In sqlite we don't have boolean types
-    pub milestone: Option<i32>
+    pub milestone: Option<i32>,
 }
 
 impl Task {
     pub async fn create(task: Task, connection: &Connection) -> QueryResult<usize> {
         let task_clone = task.clone();
         let res = connection
-            .run(|conn| diesel::insert_into(task::table).values(task_clone).execute(conn))
+            .run(|conn| {
+                diesel::insert_into(task::table)
+                    .values(task_clone)
+                    .execute(conn)
+            })
             .await;
         if res.is_ok() {
-            let id = connection.run(|conn| diesel::select(last_insert_rowid)
-            .get_result::<i32>(conn)).await;
+            let id = connection
+                .run(|conn| diesel::select(last_insert_rowid).get_result::<i32>(conn))
+                .await;
             let log = Log::from_task(task, id.unwrap(), "created".to_owned());
             let _ = Log::create(log, connection).await;
         }
@@ -71,36 +74,40 @@ impl Task {
             .await
     }
 
-    pub async fn filter(id: i32, data: TaskFilter, connection: &Connection) -> QueryResult<Vec<Task>> {
-
+    pub async fn filter(
+        id: i32,
+        data: TaskFilter,
+        connection: &Connection,
+    ) -> QueryResult<Vec<Task>> {
         connection
             .run(move |conn| {
                 let mut query = task::table.into_boxed();
-        query = query.filter(task::name.like(format!("%{}%", data.name)));
-        query = query.filter(task::place.like(format!("%{}%", data.place)));
-        
-        if let Some(mini) = data.points_min {
-            query = query.filter(task::points.ge(mini));
-        }
-        if let Some(maxi) = data.points_max {
-            query = query.filter(task::points.le(maxi));
-        }
-        
-        if data.deadline_start != "" {
-            query = query.filter(task::deadline.ge(data.deadline_start));
-        }
-        if data.deadline_end != "" {
-            query = query.filter(task::deadline.le(data.deadline_end));
-        }
+                query = query.filter(task::name.like(format!("%{}%", data.name)));
+                query = query.filter(task::place.like(format!("%{}%", data.place)));
 
-        for member in data.members.split(";") {
-            query = query.filter(task::members.like(format!("%{}%", member)));
-        }
+                if let Some(mini) = data.points_min {
+                    query = query.filter(task::points.ge(mini));
+                }
+                if let Some(maxi) = data.points_max {
+                    query = query.filter(task::points.le(maxi));
+                }
 
-        for tag in data.tags.split(";") {
-            query = query.filter(task::tags.like(format!("%{}%", tag)));
-        }
-                query.filter(task::list.eq(id)).load::<Task>(conn)})
+                if !data.deadline_start.is_empty() {
+                    query = query.filter(task::deadline.ge(data.deadline_start));
+                }
+                if !data.deadline_end.is_empty() {
+                    query = query.filter(task::deadline.le(data.deadline_end));
+                }
+
+                for member in data.members.split(';') {
+                    query = query.filter(task::members.like(format!("%{}%", member)));
+                }
+
+                for tag in data.tags.split(';') {
+                    query = query.filter(task::tags.like(format!("%{}%", tag)));
+                }
+                query.filter(task::list.eq(id)).load::<Task>(conn)
+            })
             .await
     }
 

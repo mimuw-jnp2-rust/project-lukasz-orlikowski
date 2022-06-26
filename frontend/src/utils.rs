@@ -1,14 +1,14 @@
-use std::{string::ParseError, num::ParseIntError};
+use std::{num::ParseIntError};
 
 use gloo_net::Error;
 use gloo_storage::errors::StorageError;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(
-    inline_js = "export function getValue(input) { return document.getElementById(input).value; }"
+    inline_js = "export function get_value(input) { return document.getElementById(input).value; }"
 )]
 extern "C" {
-    pub fn getValue(input: &str) -> String;
+    pub fn get_value(input: &str) -> String;
 }
 
 pub enum Msg<T> {
@@ -30,7 +30,7 @@ pub fn map_result(result: Result<i32, ParseIntError>) -> Option<i32> {
     }
 }
 
-#[wasm_bindgen(inline_js = "export function getParameter(input) { 
+#[wasm_bindgen(inline_js = "export function get_parameter(input) { 
         var url_string = window.location.href;
         var url = new URL(url_string);
         var par = url.searchParams.get(input);
@@ -38,37 +38,37 @@ pub fn map_result(result: Result<i32, ParseIntError>) -> Option<i32> {
      }")]
 
 extern "C" {
-    pub fn getParameter(input: &str) -> String;
+    pub fn get_parameter(input: &str) -> String;
 }
 
-#[wasm_bindgen(inline_js = "export function openModal(input) { 
+#[wasm_bindgen(inline_js = "export function open_modal(input) { 
         var modal = document.getElementById(input);
         modal.style.display = \"block\";
         return true;
      }")]
 
 extern "C" {
-    pub fn openModal(input: &str) -> bool;
+    pub fn open_modal(input: &str) -> bool;
 }
 
-#[wasm_bindgen(inline_js = "export function hideModal(input) { 
+#[wasm_bindgen(inline_js = "export function hide_modal(input) { 
         var modal = document.getElementById(input);
         modal.style.display = \"none\";
         return true;
      }")]
 
 extern "C" {
-    pub fn hideModal(input: &str) -> bool;
+    pub fn hide_modal(input: &str) -> bool;
 }
 
-#[wasm_bindgen(inline_js = "export function setValue(input, value) { 
+#[wasm_bindgen(inline_js = "export function set_value(input, value) { 
         var el = document.getElementById(input);
         el.value = value;
         return true;
      }")]
 
 extern "C" {
-    pub fn setValue(input: &str, value: &str) -> bool;
+    pub fn set_value(input: &str, value: &str) -> bool;
 }
 
 #[wasm_bindgen(inline_js = "export function reload() { 
@@ -102,4 +102,14 @@ pub fn set_checked(input: &str) -> bool;
 
 extern "C" {
 pub fn is_checked(input: &str) -> i32;
+}
+
+
+#[wasm_bindgen(inline_js = "export function err(input) { 
+    alert(input);
+    return true;
+ }")]
+
+ extern "C" {
+    pub fn err(input: &str) -> bool;
 }
