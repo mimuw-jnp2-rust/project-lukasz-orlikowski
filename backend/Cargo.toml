@@ -1,0 +1,30 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jwt = "0.4.0"
+rust-crypto = "0.2"
+rustc-serialize = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+diesel = { version = "1.4.8", features = ["sqlite", "r2d2"] }
+diesel_migrations = "1.3"
+rocket_cors = { git = "https://github.com/lawliet89/rocket_cors", branch = "master" }
+chrono = "0.4"
+
+[dependencies.rocket]
+version = "0.5.0-rc.2"
+default-features = false
+features = ["json"]
+
+[dependencies.rocket_sync_db_pools]
+version = "0.1.0-rc.2"
+features = ["diesel_sqlite_pool"]
+
+[dependencies.rocket_dyn_templates]
+version = "0.1.0-rc.2"
+features = ["handlebars", "tera"]
